@@ -1,7 +1,7 @@
 # Cisco Cyber Vision API Scripts
 
 Content will appear here soon...
-
+First scripts will be done to extract devices.
 
 
 ## License
