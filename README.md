@@ -12,11 +12,11 @@ This project is licensed under the Cisco Sample Code License 1.1 - see the [LICE
 ### TAGS
 
 Get all tags
-```bash
+```python
 GET /api/1.0/tags?token=YOUR_TOKEN_HERE
 ```
 Get Custom tag
-```bash
+```python
 GET /api/1.0/analyzer/tag/{custom tag}?token=YOUR_TOKEN_HERE
 ```
 Create a tag
@@ -35,12 +35,17 @@ POST /api/1.0/analyzer/tag?token=YOUR_TOKEN_HERE
 ### ANALYZER RULES
 
 Get all analyzer rules
+```python
 GET /api/1.0/analyzer/property/rule/?token=YOUR_TOKEN_HERE
+```
 
 Get custom rule
+```python
 GET /api/1.0/analyzer/property/rule/{id}?token=YOUR_TOKEN_HERE
+```
 
 Creat a custom property analyzer rule
+```python
 POST /api/1.0/analyzer/property/rule/?token=YOUR_TOKEN_HERE
 {
 "test": {
@@ -59,6 +64,9 @@ POST /api/1.0/analyzer/property/rule/?token=YOUR_TOKEN_HERE
   	 }
 }]
 }
+```
 
 Delete a custom property analyzer rule
+```python
 DELETE /api/1.0/analyzer/property/rule/{id}?token=YOUR_TOKEN_HERE
+```
