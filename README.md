@@ -12,14 +12,11 @@ This project is licensed under the Cisco Sample Code License 1.1 - see the [LICE
 ### TAGS
 
 Get all tags
-<<<<<<< HEAD
 ```python
 GET /api/1.0/tags?token=YOUR_TOKEN_HERE
 ```
 Get Custom tag
 ```python
-=======
-```bash
 GET /api/1.0/tags?token=YOUR_TOKEN_HERE
 ```
 Get Custom tag
