@@ -12,12 +12,15 @@ This project is licensed under the Cisco Sample Code License 1.1 - see the [LICE
 ### TAGS
 
 Get all tags
+```bash
 GET /api/1.0/tags?token=YOUR_TOKEN_HERE
-
+```
 Get Custom tag
+```bash
 GET /api/1.0/analyzer/tag/{custom tag}?token=YOUR_TOKEN_HERE
-
+```
 Create a tag
+```python
 POST /api/1.0/analyzer/tag?token=YOUR_TOKEN_HERE
 {
     "tag": TAG_KEY,
@@ -27,6 +30,7 @@ POST /api/1.0/analyzer/tag?token=YOUR_TOKEN_HERE
     "IT": TAG_DOMAIN
     "OT": TAG_DOMAIN
 }
+```
 
 ### ANALYZER RULES
 
