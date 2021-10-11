@@ -74,3 +74,33 @@ Delete a custom property analyzer rule
 ```python
 DELETE /api/1.0/analyzer/property/rule/{id}?token=YOUR_TOKEN_HERE
 ```
+
+## Script JSON Design
+
+### TAG JSON Design
+
+As we can see above the TAG POST Rule contains the following fields:
+```python
+{
+    "tag": TAG_KEY,
+    "label": TAG_NAME,
+    "desc": TAG_DESCRIPTION
+    "type": TAG_TYPE
+    "IT": TAG_DOMAIN
+    "OT": TAG_DOMAIN
+}
+```
+What we have done below is created a list that contains the required elements:
+TAG_KEY - This is the Key that will be used to reference the newly created tag
+TAG_NAME - This is the human readable tag that is assigned in the User Interface
+TAG_DESCRIPTION - This description shows up under the component section
+TAG_IMPORTANCE - This determines whether it is RED or not
+
+```python
+#("TAG","LABEL","DESCRIPTION","IMPORTANT")
+tag_list = [
+    ("GOBUSTER","GObuster Tool","Directory/File and DNS busting tool written in Go","true"),
+]
+```
+
+### ANALYZER JSON Design
