@@ -1,6 +1,7 @@
 # Cisco Cyber Vision Analyzer Rules
 
-
+These rules have been created to specifically trigger on specific properties that CyberVision detects via DPI
+These rules will aid in the forensic analysis when team members are reviewing network traffic
 
 ## License
 
