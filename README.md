@@ -3,6 +3,14 @@
 These rules have been created to specifically trigger on specific properties that CyberVision detects via DPI
 These rules will aid in the forensic analysis when team members are reviewing network traffic
 
+### Details
+Analyzer Rules are built out in two stages.
+1. Create Tag
+2. Find Property Value
+3. Build Property Analyzer Rule
+
+You need to have a TAG value created to assign to Property Analyzer Rule
+
 ## License
 
 This project is licensed under the Cisco Sample Code License 1.1 - see the [LICENSE.md](LICENSE.md) file for details
@@ -10,6 +18,9 @@ This project is licensed under the Cisco Sample Code License 1.1 - see the [LICE
 ## API Calls
 
 ### TAGS
+
+These are the standard API calls for TAGS with API Version 1.0
+It Covers the basics needed to create the core of the Analyzer rules.
 
 Get all tags
 ```python
