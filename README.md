@@ -42,6 +42,10 @@ Groups can be added manually or using the group.py script
 
 ![](2021-11-16-21-02-04.png)
 
+## Requirements
+
+requirements.txt
+
 ## License
 
 This project is licensed under the Cisco Sample Code License 1.1 - see the [LICENSE.md](LICENSE.md) file for details
@@ -49,3 +53,5 @@ This project is licensed under the Cisco Sample Code License 1.1 - see the [LICE
 ## Further Links
 
 * [Cisco DevNet Website](https://developer.cisco.com)
+
+
