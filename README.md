@@ -44,7 +44,7 @@ Groups can be added manually or using the group.py script
 
 ## Requirements
 
-requirements.txt
+[requirements.txt](requirements.txt))
 
 ## License
 
