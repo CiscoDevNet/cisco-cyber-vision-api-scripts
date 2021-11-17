@@ -16,7 +16,7 @@ All scripts are using the API v3
 1. cvconfig.py file [Common] part -  
 
 1.1. the API token of the Cyber Vision center needs to be changed  
-1.2. if the script is not running on the center, the IP address + certificate fields need to be updated to reflect the server from which the user will execute the script.
+1.2. if the script is not running on the center, the IP address field need to be updated to reflect the center IP address.
 
 In order to add devices to the groups, please follow these steps :
 
@@ -25,7 +25,10 @@ In order to add devices to the groups, please follow these steps :
 Groups can be added manually or using the group.py script 
 
 2.1 use group.py with export option to get the csv file
+         python3 group.py -export
 2.2 Add needed groups to the CSV file then use the import option of group.py scrypt
+
+![](2021-11-16-21-01-03.png)
 
 3. Add devices to a group
 
@@ -37,6 +40,11 @@ Groups can be added manually or using the group.py script
 4.1 Export device list using the option export of the device.py script
 4.2 On the generated file update the custom name and use update option of device.py scrypt to upload the updated file
 
+![](2021-11-16-21-02-04.png)
+
+## Requirements
+
+[requirements.txt](requirements.txt)
 
 ## License
 
@@ -45,3 +53,5 @@ This project is licensed under the Cisco Sample Code License 1.1 - see the [LICE
 ## Further Links
 
 * [Cisco DevNet Website](https://developer.cisco.com)
+
+
