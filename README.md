@@ -7,7 +7,6 @@ It includes:
  - group.py: export groups to a CSV file ; update groups based on the CSV data
  - preset.py: export custom presets to a CSV file ; (update is non working for the moment)
 
-
 All scripts are using the API v3
 
  Nota Bene: device.py / group.py are made to be replacement for the cmdb.py script from 2017 (4 years old). First, they are expecting the user to define the groups and create them as first step. Then in a second step they can use device.py to update the groups of the device. Secondly, as the device are made of several components with various addresses, the device are updated using their ID. So the initial CSV file must be first built using a CSV export and then use device.py to update the devices.
