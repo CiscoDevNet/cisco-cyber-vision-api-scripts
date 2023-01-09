@@ -6,7 +6,6 @@ It includes:
  - device.py: export devices to a CSV file ; update devices group and custom name based on the CSV data ; export list of vulnerabilities ; export list of credentials
  - group.py: export groups to a CSV file ; update groups based on the CSV data
  - preset.py: export custom presets to a CSV file ; (update is non working for the moment)
- - property.py: export flows based on start,end date or tag. Notice: counts are just provided for visibility, no check on the volume
 
 All scripts are using the API v3
 
