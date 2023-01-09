@@ -1,11 +1,12 @@
 #!/usr/bin/python3
 # Cisco Cyber Vision V4.0
 # Device Management
-# Version 1.0 - 2021-09-21
+# Version 1.3 - 2023-01-09
 import argparse
 from collections import defaultdict
 import csv
 import os
+import json
 
 import cvconfig
 import api
@@ -35,6 +36,9 @@ def main():
     command_group.add_argument("--update",
                                help="Update existing groups with devices from a CSV file\n",
                                action="store_true", default=False, dest="command_update")
+    command_group.add_argument("--unknown-vendors",
+                               help="Get the list of unknown vendords\n",
+                               action="store_true", default=False, dest="command_vendors")
 
 
     args = parser.parse_args()
@@ -53,6 +57,8 @@ def main():
         return device_export(center_ip, center_port, token, args.filename,csv_delimiter, csv_encoding)
     elif args.command_update:
         return device_update(center_ip, center_port, token, args.filename, csv_delimiter, csv_encoding)
+    elif args.command_vendors:
+        return get_unkown_vendors(center_ip, center_port, token)
     
     parser.print_help()
 
@@ -128,6 +134,28 @@ def build_device_riskscore(session,row,d):
     except Exception as e: 
         print(e)
 
+def get_vendor_name (device):
+    if 'normalizedProperties' in device:
+        for p in device['normalizedProperties']:
+                if p['key'] == "vendor-name":
+                    return p['value']
+    return ''
+
+def get_unkown_vendors(center_ip, center_port, token):
+    with api.APISession(center_ip, center_port, token) as session:
+        # hack to get all devices via 'All data' preset, should be removed later
+        components = api.get_route(session, '/api/3.0/components')
+
+    unknown_vendors = {}
+    for c in components:
+        if c['icon'] == 'library/default.svg':
+            vendor = get_vendor_name(c)
+            if not vendor in unknown_vendors:
+                unknown_vendors[vendor] = c['mac'][0:8]
+
+    print(json.dumps(unknown_vendors,sort_keys=True, indent=4))
+    return
+
 def write_devices(filename,csv_encoding,csv_delimiter,devices,session):
     with open(filename, 'w', encoding=csv_encoding) as csvfile:
         fieldnames = ['device-id','device-mac','device-ip','device-name','device-custom-name','device-tags','device-riskscore',
@@ -145,10 +173,8 @@ def write_devices(filename,csv_encoding,csv_delimiter,devices,session):
             row = {}
             build_device_row(session,row,d)
             build_device_riskscore(session,row,d)
-            
             writer.writerow(row)
         print(f"LOG: Exported {len(devices)} into '{filename}'")
-
 
 #
 # Vulnerabiltiies
@@ -172,7 +198,7 @@ def write_vulns(filename,csv_encoding,csv_delimiter,session,devices):
                     'CVE','CVSS','CVSS-temporal','CVSS-vector-string','CVE-description','CVE-solution']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=csv_delimiter)
         writer.writeheader()
-    
+        
         count = 0
         for d in devices:
             vulnerabilities = build_device_vulns(session,d)
@@ -234,8 +260,15 @@ def build_cred_row(row,cred,d):
     row['device-name'] = d['originalLabel']
     row['device-custom-name'] = d['customLabel']
     row['credential-protocol'] = cred['protocol']
-    row['credential-username'] = cred['username']
-    row['credential-password'] = cred['password']
+    if 'username' in cred: row['credential-username'] = cred['username']
+    else: row['credential-username'] = "EMPTY_USERNAME"
+    if 'password' in cred:
+        if cred['password']:
+            row['credential-password'] = cred['password']
+        else:
+            row['credential-password'] = "EMPTY_PASSWORD"
+    else:
+        row['credential-password'] = "EMPTY_PASSWORD"
     row['credential-algorithm'] = cred['algo']
     
 #
