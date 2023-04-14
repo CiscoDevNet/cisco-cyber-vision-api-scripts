@@ -310,7 +310,7 @@ def device_update(center_ip, center_port, token, filename,csv_delimiter, csv_enc
             for row in reader:
                 # devices or component
                 path = "devices"
-                if row['device-isdevice'] == 'False':
+                if row['device-isdevice'] == 'FALSE':
                     path = "components"
 
                 if 'group-name' in row and row['group-name']:
