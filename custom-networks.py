@@ -26,8 +26,9 @@ def main():
                         default="custom-networks.csv")
     # Main Command Parsing
     command_group = parser.add_mutually_exclusive_group()
-    command_group.add_argument("--create", help="Create custom networks", dest="create",
-                               action="store_true")
+    command_group.add_argument("--import",
+                               help="Create custom networks from a CSV file\n",
+                               action="store_true", default=False, dest="create")
 
     command_group.add_argument("--export",
                                help="Export all cusrom networks into a CSV file\n",
