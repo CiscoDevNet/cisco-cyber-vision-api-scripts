@@ -107,6 +107,11 @@ def post_route(session, route, json):
     #print(f"DEBUG: [POST] Payload: {json}")
     return session.post(route,json=json)
 
+def delete_route(session, route, json):
+    #print(f"DEBUG: [POST] Calling {route}")
+    #print(f"DEBUG: [POST] Payload: {json}")
+    return session.delete(route,json=json)
+
 def patch_route(session, route, json):
     #print(f"DEBUG: [PATCH] Calling {route}")
     #print(f"DEBUG: [PATCH] Payload: {json}")

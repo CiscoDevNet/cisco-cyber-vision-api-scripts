@@ -1,0 +1,4 @@
+name,type,ip_range,vlan_id,duplicated,split_devices_per_sensor
+Network1,OT Internal,10.0.0.0/24,1,False,True
+Network3,IT Internal,172.16.0.0/16,2003,False,True
+Network2,IT Internal,192.168.1.0/24,1001,True,False
