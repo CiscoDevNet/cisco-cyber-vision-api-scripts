@@ -110,7 +110,7 @@ def create_networks(center_ip, center_port, token, csv_file, csv_delimiter):
 def delete_networks(center_ip, center_port, token):
     network_data = get_network_data(center_ip=center_ip, center_port=center_port, token=token)
     if network_data:
-        custom_network_ids = [entry["customNetworkID"] for entry in network_data]
+        custom_network_ids = [entry["id"] for entry in network_data]
         with api.APISession(center_ip, center_port, token) as session:
             response = api.delete_route(session, '/api/3.0/networks', json=custom_network_ids)
             if response.status_code != 200:
@@ -134,20 +134,23 @@ def read_csv_file(csv_file, csv_delimiter):
         with open(csv_file, newline='') as csvfile:
             reader = csv.DictReader(csvfile, delimiter=csv_delimiter)
             for row in reader:
+                vlan_id = int(row['vlan_id']) if row['vlan_id'].strip() else None
                 network = {
-                    "customNetworkName": row['name'],
-                    "customNetworkType": row['type'],
-                    "customNetworkIPRange": row['ip_range'],
-                    "customNetworkVlanID": int(row['vlan_id']),
-                    "customNetworkDuplicated": row['duplicated'].lower() == 'true',
-                    "customNetworkSplitDevicesPerSensor": row['split_devices_per_sensor'].lower() == 'true'
+                    "name": row['name'],
+                    "type": row['type'],
+                    "ipRange": row['ip_range'],
+                    "vlanId": vlan_id,
+                    "duplicated": row['duplicated'].lower() == 'true',
+                    "splitDevicesPerSensor": row['split_devices_per_sensor'].lower() == 'true'
                 }
+
                 networks.append(network)
     except FileNotFoundError:
         print("Error: File '{csv_file}' not found.")
         sys.exit(1)
-    except BaseException:
+    except BaseException as ex:
         print("Error: File '{csv_file}' is not well formatted.")
+        print(ex)
         print_csv_file_format()
         sys.exit(1)
     return networks
@@ -164,8 +167,8 @@ def print_response(response):
 def convert_json_to_csv(json_data, csv_delimiter):
     csv_output = io.StringIO()
     # name,type,ip_range,vlan_id,duplicated,split_devices_per_sensor
-    fieldnames = ['customNetworkID', 'customNetworkName', 'customNetworkType', 'customNetworkIPRange',
-                  'customNetworkVlanID', 'customNetworkDuplicated', 'customNetworkSplitDevicesPerSensor']
+    fieldnames = ['id', 'name', 'type', 'ipRange',
+                  'vlanId', 'duplicated', 'splitDevicesPerSensor']
     headers = ['id', 'name', 'type', 'ip_range', 'vlan_id', 'duplicated', 'split_devices_per_sensor']
     writer = csv.DictWriter(csv_output, fieldnames=fieldnames, delimiter=csv_delimiter)
     writer.writerow(dict(zip(fieldnames, headers)))
