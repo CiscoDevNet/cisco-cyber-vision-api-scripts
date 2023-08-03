@@ -1,3 +1,7 @@
+#!/usr/bin/python3
+# Cisco Cyber Vision V4.0
+# Network Management
+# Version 1.0 - 2023-08-03
 import csv
 import argparse
 import json
@@ -85,6 +89,7 @@ def print_csv_file_format():
     print("name,type,ip_range,vlan_id,duplicated,split_devices_per_sensor")
     print("Network3,IT Internal,172.16.0.0/16,2003,False,True")
     print("Network2,IT Internal,192.168.1.0/24,1001,True,False")
+    print("Note: In case name has a comma, then, provide the name in double quotes")
 
 
 def create_networks(center_ip, center_port, token, csv_file, csv_delimiter):
