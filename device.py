@@ -76,7 +76,7 @@ def build_device_row(session,row,d):
         row['device-custom-name'] = d['customLabel']
         row['device-tags'] = "-".join(sorted(t['label'] for t in d['tags']))
         row['device-riskscore'] = d['riskScore']
-        row['device-network'] = d['situation']
+        row['device-network'] = d.get('situation')
         row['device-isdevice'] = d['isDevice']
         # Normalized Properties
         if 'normalizedProperties' in d:
@@ -93,7 +93,9 @@ def build_device_row(session,row,d):
         if 'group' in d and d['group']:
             row['group-name'] = d['group']['label']
             row['group-color'] = d['group']['color']
-            row['group-industrial-impact'] = d['group']['criticalness']
+            row['group-industrial-impact'] = d['group'].get('criticalness')
+    except KeyError as e:
+        print("KeyError: {} for device {}".format(e, row['device-id']))
     except Exception as e: print(e)
 
 def build_device_riskscore(session,row,d):
@@ -114,23 +116,25 @@ def build_device_riskscore(session,row,d):
             if risk['deviceTypeRisk']['score'] > 0:
                 row['device-riskscore-devicetype-matching'] = risk['deviceTypeRisk']['device']['deviceType']
                 row['device-riskscore-devicetype-distribution'] = risk['deviceTypeRisk']['score']
-                row['device-riskscore-devicetype-details'] = risk['deviceTypeRisk']['riskScoreDescription']
+                row['device-riskscore-devicetype-details'] = risk['deviceTypeRisk'].get('riskScoreDescription')
             # Activity
             if risk['activitiesRisk']['score'] > 0:
                 row['device-riskscore-activities-matching'] = risk['activitiesRisk']['matchingTag']['label']
                 row['device-riskscore-activities-distribution'] = risk['activitiesRisk']['score']
-                row['device-riskscore-activities-details'] = risk['activitiesRisk']['matchingTag']['riskScoreDescription']
+                row['device-riskscore-activities-details'] = risk['activitiesRisk']['matchingTag'].get('riskScoreDescription')
             # Group
             if risk['groupRisk']['score'] > 0:
                 row['device-riskscore-groupimpact-matching'] = risk['groupRisk']['label']
                 row['device-riskscore-groupimpact-distribution'] = risk['groupRisk']['score']
                 row['device-riskscore-groupimpact-details'] = risk['groupRisk']['description']
-                row['device-riskscore-groupimpact-criticalness'] = risk['groupRisk']['criticalness']
+                row['device-riskscore-groupimpact-criticalness'] = risk['groupRisk'].get('criticalness')
             # Vulnerabilities
             if risk['vulnerabilitiesRisk']['mostImpactingVulnerability']:
                 row['device-riskscore-vulnerabilities-cve'] = risk['vulnerabilitiesRisk']['mostImpactingVulnerability']['cve']
                 row['device-riskscore-vulnerabilities-distribution'] = risk['vulnerabilitiesRisk']['score']
                 row['device-riskscore-vulnerabilities-details'] = risk['vulnerabilitiesRisk']['mostImpactingVulnerability']
+    except KeyError as e:
+        print("KeyError: {} for device {}".format(e, row['device-id']))
     except Exception as e: 
         print(e)
 
@@ -217,10 +221,10 @@ def build_vulns_row(row,vuln,d):
     row['device-name'] = d['originalLabel']
     row['device-custom-name'] = d['customLabel']
     row['CVE'] = vuln['cve']
-    row['CVSS'] = vuln['CVSS']
-    row['CVSS-temporal'] = vuln['CVSS_temporal']
-    row['CVSS-vector-string'] = vuln['CVSS_vector_string']
-    row['CVE-description'] = vuln['full_description'] + " " + vuln['summary']
+    row['CVSS'] = vuln.get('CVSS')
+    row['CVSS-temporal'] = vuln.get('CVSS_temporal')
+    row['CVSS-vector-string'] = vuln.get('CVSS_vector_string')
+    row['CVE-description'] = "{} {}".format(vuln.get('full_description'), vuln.get('summary'))
     row['CVE-solution'] = vuln['solution']
 
 #
