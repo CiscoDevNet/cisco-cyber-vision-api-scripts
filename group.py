@@ -21,6 +21,9 @@ def main():
     parser.add_argument("--center-port", dest="center_port",
                         help="Specified the center port (default: %d)"%cvconfig.center_port, 
                         default=cvconfig.center_port)
+    parser.add_argument("--proxy", dest="proxy",
+                        help="Specified the proxy to use (default: %s)"%cvconfig.proxy, 
+                        default=cvconfig.proxy)
     parser.add_argument("--encoding", dest="csv_encoding",
                         help="CSV file encoding, default is %s" % cvconfig.csv_encoding)
     parser.add_argument("--delimiter", dest="csv_delimiter",
@@ -46,6 +49,7 @@ def main():
     token = set_conf(args.token, cvconfig.token)
     center_ip = set_conf(args.center_ip, cvconfig.center_ip)
     center_port = set_conf(args.center_port, cvconfig.center_port)
+    proxy = set_conf(args.proxy, cvconfig.proxy)
     csv_encoding = set_conf(args.csv_encoding, cvconfig.csv_encoding)
     csv_delimiter = set_conf(args.csv_delimiter, cvconfig.csv_delimiter)
 
@@ -53,11 +57,11 @@ def main():
         print("TOKEN and CENTER_IP are mandatory, check cvconfig.py or us --token/--center-ip")
 
     if args.command_export:
-        return group_export(center_ip, center_port, token, args.filename,csv_delimiter, csv_encoding)
+        return group_export(center_ip, center_port, token, proxy, args.filename,csv_delimiter, csv_encoding)
     elif args.command_import:
-        return group_import(center_ip, center_port, token, args.filename, csv_delimiter, csv_encoding)
+        return group_import(center_ip, center_port, token, proxy, args.filename, csv_delimiter, csv_encoding)
     elif args.command_delete:
-        return group_delete_all(center_ip,center_port,token)
+        return group_delete_all(center_ip,center_port,token, proxy)
 
     parser.print_help()
 
@@ -66,8 +70,8 @@ def set_conf(arg,conf):
         return arg
     return conf
 
-def group_delete_all(center_ip, center_port, token,):
-    with api.APISession(center_ip, center_port, token) as session:
+def group_delete_all(center_ip, center_port, token, proxy):
+    with api.APISession(center_ip, center_port, token, proxy) as session:
         groups = api.get_route(session, '/api/3.0/groups')
         for group in groups: 
             print(f"LOG: Deleting {group['label']}")
@@ -76,8 +80,8 @@ def group_delete_all(center_ip, center_port, token,):
                 print(f"ERROR: Group [{group['label']}][{group['id']}] was not deleted, return code: {ret.status_code}")
         
 
-def group_export(center_ip, center_port, token, filename,csv_delimiter, csv_encoding):
-    with api.APISession(center_ip, center_port, token) as session:
+def group_export(center_ip, center_port, token, proxy, filename,csv_delimiter, csv_encoding):
+    with api.APISession(center_ip, center_port, token, proxy) as session:
         groups = api.get_route(session, '/api/3.0/groups')
         
         with open(filename, 'w', encoding=csv_encoding) as csvfile:
@@ -94,9 +98,9 @@ def group_export(center_ip, center_port, token, filename,csv_delimiter, csv_enco
                 writer.writerow(row)
     return
 
-def group_import(center_ip, center_port, token, filename,csv_delimiter, csv_encoding):
+def group_import(center_ip, center_port, token, proxy, filename,csv_delimiter, csv_encoding):
     with open(filename, 'r') as csvfile:
-        with api.APISession(center_ip, center_port, token) as session:            
+        with api.APISession(center_ip, center_port, token, proxy) as session:            
             reader = csv.DictReader(csvfile, delimiter=csv_delimiter)
             for row in reader:
                 if not 'group-name' in row or not row['group-name']:

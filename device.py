@@ -22,6 +22,9 @@ def main():
     parser.add_argument("--center-port", dest="center_port",
                         help="Specified the center port (default: %d)"%cvconfig.center_port, 
                         default=cvconfig.center_port)
+    parser.add_argument("--proxy", dest="proxy",
+                        help="Specified the proxy to use (default: %s)"%cvconfig.proxy, 
+                        default=cvconfig.proxy)
     parser.add_argument("--encoding", dest="csv_encoding",
                         help="CSV file encoding, default is %s" % cvconfig.csv_encoding)
     parser.add_argument("--delimiter", dest="csv_delimiter",
@@ -47,6 +50,7 @@ def main():
     token = set_conf(args.token, cvconfig.token)
     center_ip = set_conf(args.center_ip, cvconfig.center_ip)
     center_port = set_conf(args.center_port, cvconfig.center_port)
+    proxy = set_conf(args.proxy, cvconfig.proxy)
     csv_encoding = set_conf(args.csv_encoding, cvconfig.csv_encoding)
     csv_delimiter = set_conf(args.csv_delimiter, cvconfig.csv_delimiter)
 
@@ -54,11 +58,11 @@ def main():
         print("TOKEN and CENTER_IP are mandatory, check cvconfig.py or us --token/--center-ip")
 
     if args.command_export:
-        return device_export(center_ip, center_port, token, args.filename,csv_delimiter, csv_encoding)
+        return device_export(center_ip, center_port, token, proxy, args.filename,csv_delimiter, csv_encoding)
     elif args.command_update:
-        return device_update(center_ip, center_port, token, args.filename, csv_delimiter, csv_encoding)
+        return device_update(center_ip, center_port, token, proxy, args.filename, csv_delimiter, csv_encoding)
     elif args.command_vendors:
-        return get_unkown_vendors(center_ip, center_port, token)
+        return get_unkown_vendors(center_ip, center_port, token, proxy)
     
     parser.print_help()
 
@@ -145,8 +149,8 @@ def get_vendor_name (device):
                     return p['value']
     return ''
 
-def get_unkown_vendors(center_ip, center_port, token):
-    with api.APISession(center_ip, center_port, token) as session:
+def get_unkown_vendors(center_ip, center_port, token, proxy):
+    with api.APISession(center_ip, center_port, token, proxy) as session:
         # hack to get all devices via 'All data' preset, should be removed later
         components = api.get_route(session, '/api/3.0/components')
 
@@ -295,8 +299,8 @@ def build_cred_row(row,cred,d):
 # Main Functions
 # 
 
-def device_export(center_ip, center_port, token, filename,csv_delimiter, csv_encoding):
-    with api.APISession(center_ip, center_port, token) as session:
+def device_export(center_ip, center_port, token, proxy, filename,csv_delimiter, csv_encoding):
+    with api.APISession(center_ip, center_port, token, proxy) as session:
         # hack to get all devices via 'All data' preset, should be removed later
         presets = api.get_route(session, '/api/3.0/presets')
         all_id = 0
@@ -316,31 +320,9 @@ def device_export(center_ip, center_port, token, filename,csv_delimiter, csv_enc
         
     return
 
-def device_export_group(center_ip, center_port, token, filename,csv_delimiter, csv_encoding):
-    with api.APISession(center_ip, center_port, token) as session:
-        # hack to get all devices via 'All data' preset, should be removed later
-        presets = api.get_route(session, '/api/3.0/presets')
-        all_id = 0
-        for p in presets:
-            if p['label'] == 'All data':
-                all_id = p['id']
-                break
-        route = f"/api/3.0/presets/{all_id}/visualisations/networknode-list"
-        devices = api.get_route(session, route)
-        
-        # Loop to build devices, credentials, vulns list
-        write_devices_group(filename,csv_encoding,csv_delimiter,devices,session)
-        # If needed store vulns in another file
-        #write_vulns(filename,csv_encoding,csv_delimiter,session,devices)
-        # If needed store credentials in another file
-        #write_credentials(filename,csv_encoding,csv_delimiter,session,devices)
-        
-    return
-
-
-def device_update(center_ip, center_port, token, filename,csv_delimiter, csv_encoding):
+def device_update(center_ip, center_port, token, proxy, filename,csv_delimiter, csv_encoding):
     with open(filename, 'r') as csvfile:
-        with api.APISession(center_ip, center_port, token) as session:
+        with api.APISession(center_ip, center_port, token, proxy) as session:
             # get all groups to match their name and find their ids
             route = "/api/3.0/groups"
             groups = api.get_route(session, route)
