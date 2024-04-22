@@ -22,6 +22,9 @@ def main():
     parser.add_argument("--center-port", dest="center_port",
                         help="Specified the center port (default: %d)" % cvconfig.center_port,
                         default=cvconfig.center_port)
+    parser.add_argument("--proxy", dest="proxy",
+                        help="Specified the proxy to use (default: %s)"%cvconfig.proxy, 
+                        default=cvconfig.proxy)
     parser.add_argument("--encoding", dest="csv_encoding",
                         help="CSV file encoding, default is %s" % cvconfig.csv_encoding)
     parser.add_argument("--delimiter", dest="csv_delimiter",
@@ -47,34 +50,29 @@ def main():
     token = set_conf(args.token, cvconfig.token)
     center_ip = set_conf(args.center_ip, cvconfig.center_ip)
     center_port = set_conf(args.center_port, cvconfig.center_port)
+    proxy = set_conf(args.proxy, cvconfig.proxy)
     csv_encoding = set_conf(args.csv_encoding, cvconfig.csv_encoding)
     csv_delimiter = set_conf(args.csv_delimiter, cvconfig.csv_delimiter)
 
     if not token or not center_ip:
         print("TOKEN and CENTER_IP are mandatory, check cvconfig.py or us --token/--center-ip")
 
-    if args.token:
-        token = args.token
-    if args.center_ip:
-        center_ip = args.center_ip
     if args.filename:
         csv_file = args.filename
-    if not token or not center_ip:
-        print("TOKEN and CENTER_IP are mandatory, check config.py or use --token/--center-ip")
 
     if args.create:
         if not csv_file:
             print("Missing required parameter: --csv-file path_to_csv_file")
             print_csv_file_format()
             return
-        create_networks(center_ip=center_ip, center_port=center_port, token=token, csv_file=csv_file,
+        create_networks(center_ip=center_ip, center_port=center_port, token=token, proxy=proxy, csv_file=csv_file,
                         csv_delimiter=csv_delimiter)
         return
     if args.delete:
-        delete_networks(center_ip=center_ip, center_port=center_port, token=token)
+        delete_networks(center_ip=center_ip, center_port=center_port, token=token, proxy=proxy)
         return
     if args.command_export:
-        response = get_network_data(center_ip=center_ip, center_port=center_port, token=token)
+        response = get_network_data(center_ip=center_ip, center_port=center_port, token=token, proxy=proxy)
         csv_data = convert_json_to_csv(response, csv_delimiter=csv_delimiter)
 
         with open(csv_file, "w", encoding=csv_encoding) as file:
@@ -92,10 +90,10 @@ def print_csv_file_format():
     print("Note: In case name has a comma, then, provide the name in double quotes")
 
 
-def create_networks(center_ip, center_port, token, csv_file, csv_delimiter):
+def create_networks(center_ip, center_port, token, proxy, csv_file, csv_delimiter):
     networks = read_csv_file(csv_file, csv_delimiter)
     if networks:
-        with api.APISession(center_ip, center_port, token) as session:
+        with api.APISession(center_ip, center_port, token, proxy) as session:
             response = api.post_route(session, '/api/3.0/networks/', json=networks)
             if response.status_code != 200:
                 print_response(response)
@@ -107,11 +105,11 @@ def create_networks(center_ip, center_port, token, csv_file, csv_delimiter):
         print("INFO: CSV file is empty")
 
 
-def delete_networks(center_ip, center_port, token):
-    network_data = get_network_data(center_ip=center_ip, center_port=center_port, token=token)
+def delete_networks(center_ip, center_port, token, proxy):
+    network_data = get_network_data(center_ip=center_ip, center_port=center_port, token=token, proxy=proxy)
     if network_data:
         custom_network_ids = [entry["id"] for entry in network_data]
-        with api.APISession(center_ip, center_port, token) as session:
+        with api.APISession(center_ip, center_port, token, proxy) as session:
             response = api.delete_route(session, '/api/3.0/networks', json=custom_network_ids)
             if response.status_code != 200:
                 print_response(response)
@@ -123,8 +121,8 @@ def delete_networks(center_ip, center_port, token):
         print('INFO: Nothing to delete')
 
 
-def get_network_data(center_ip, center_port, token):
-    with api.APISession(center_ip, center_port, token) as session:
+def get_network_data(center_ip, center_port, token, proxy):
+    with api.APISession(center_ip, center_port, token, proxy) as session:
         return api.get_route(session, '/api/3.0/networks')
 
 

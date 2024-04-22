@@ -10,6 +10,9 @@ token = 'ics-4367dd196cd361e48e1c2002169b022235211b0d-845728dc73dfb87755bcd0d177
 #center_port = 9999
 center_ip = '169.254.0.42'
 center_port = 4443
+# if a proxy is needed, put it in the form 'protocol://ip:port'
+#proxy = 'socks5h://127.0.0.1:4010'
+proxy = ''
 
 # CSV Parameters
 #csv_encoding = 'iso-8859-15'
