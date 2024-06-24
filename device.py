@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-# Cisco Cyber Vision V4.0
+# Cisco Cyber Vision V4.x and V5.0.x
 # Device Management
 # Version 1.3 - 2023-01-09
 import argparse
@@ -180,6 +180,22 @@ def write_devices(filename,csv_encoding,csv_delimiter,devices,session):
             writer.writerow(row)
         print(f"LOG: Exported {len(devices)} into '{filename}'")
 
+#write simple device CSV for groupping script
+def write_devices_group(filename,csv_encoding,csv_delimiter,devices,session):
+    with open(filename, 'w', encoding=csv_encoding) as csvfile:
+        fieldnames = ['device-id','device-mac','device-ip','device-name','device-custom-name','device-tags','device-riskscore',
+                    'group-name','group-color','group-industrial-impact',
+                    'device-network','device-fw-version','device-hw-version','device-model-name','device-model-ref',                       
+                    'device-riskscore-current','device-riskscore-best-achievable','device-isdevice',
+                    ]
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=csv_delimiter)
+        writer.writeheader()
+        for d in devices:
+            row = {}
+            build_device_row(session,row,d)
+            writer.writerow(row)
+        print(f"LOG: Exported {len(devices)} into '{filename}'")
+
 #
 # Vulnerabiltiies
 # 
@@ -299,6 +315,28 @@ def device_export(center_ip, center_port, token, filename,csv_delimiter, csv_enc
         write_credentials(filename,csv_encoding,csv_delimiter,session,devices)
         
     return
+
+def device_export_group(center_ip, center_port, token, filename,csv_delimiter, csv_encoding):
+    with api.APISession(center_ip, center_port, token) as session:
+        # hack to get all devices via 'All data' preset, should be removed later
+        presets = api.get_route(session, '/api/3.0/presets')
+        all_id = 0
+        for p in presets:
+            if p['label'] == 'All data':
+                all_id = p['id']
+                break
+        route = f"/api/3.0/presets/{all_id}/visualisations/networknode-list"
+        devices = api.get_route(session, route)
+        
+        # Loop to build devices, credentials, vulns list
+        write_devices_group(filename,csv_encoding,csv_delimiter,devices,session)
+        # If needed store vulns in another file
+        #write_vulns(filename,csv_encoding,csv_delimiter,session,devices)
+        # If needed store credentials in another file
+        #write_credentials(filename,csv_encoding,csv_delimiter,session,devices)
+        
+    return
+
 
 def device_update(center_ip, center_port, token, filename,csv_delimiter, csv_encoding):
     with open(filename, 'r') as csvfile:
