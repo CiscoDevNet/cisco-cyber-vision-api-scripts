@@ -7,6 +7,10 @@ It includes:
  - group.py: export groups to a CSV file ; update groups based on the CSV data
  - preset.py: export custom presets to a CSV file ; (update is non working for the moment)
  - custom-networks.py: create, export and delete custom networks; create custom networks based on the CSV data
+ - group_automation will automate things and could automatically or with several steps:
+    	- export devices to a CSV file "devices.csv" and a list of Subnets "subnet.csv"
+     - create groups: automatically with group name as subnet name or manually with manual edition of the subnet.csv file
+     - upload all components or devices from a csv file to update group names 
 
 All scripts are using the API v3
 
@@ -41,6 +45,15 @@ Groups can be added manually or using the group.py script
 4.2 On the generated file update the custom name and use update option of device.py scrypt to upload the updated file
 
 ![](2021-11-16-21-02-04.png)
+
+
+5. Auto-groupping options:
+
+5.1 --export : Export subnets and devices into CSV files
+5.2 --import : Push to CyberVision Center custom groups and associate devices / xomponents to subnets based on "subnet.csv" (result of the export option which could be edited by the user.)
+5.3 --auto : Export subnets and devices into CSV files and push to center new group names, based on subnet names
+
+![](CCV-auto-group.png)
 
 ## Requirements
 
