@@ -1,6 +1,6 @@
 # This file could be use after setup to install the configuration token
 # API Token
-token = 'ics-4367dd196cd361e48e1c2002169b022235211b0d-845728dc73dfb87755bcd0d1776adc8473534630'
+token = 'ics-xxxx'
 # ICS CyberVision FQDN or IP Address
 # for a center you should use
 # center_ip = '169.254.0.42'
