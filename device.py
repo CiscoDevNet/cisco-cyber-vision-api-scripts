@@ -320,8 +320,8 @@ def device_export(center_ip, center_port, token, proxy, filename,csv_delimiter, 
         
     return
 
-def device_export_group(center_ip, center_port, token, filename,csv_delimiter, csv_encoding):
-    with api.APISession(center_ip, center_port, token) as session:
+def device_export_group(center_ip, center_port, token, proxy, filename,csv_delimiter, csv_encoding):
+    with api.APISession(center_ip, center_port, token, proxy) as session:
         # hack to get all devices via 'All data' preset, should be removed later
         presets = api.get_route(session, '/api/3.0/presets')
         all_id = 0
