@@ -1,45 +1,5 @@
-import subprocess
 import netaddr
-import csv
-
-status = 'Unkown'
-
-def main(p , s):
-    if p >= 1 or p <= 0:
-        print("p has to be within ]0, 1[")
-        quit()
-    
-    data = get_data_from_db()
-    wellconf, notwellconf = compute_subnets(data, p, s)
-
-    write_subnets(wellconf, notwellconf)
-
-# must return a dictionary keyed by sensor id containing lists of ip pairs
-# like { "sensor_id": [(ip1,ip2), (ip1,ip3)] }
-def get_data_from_db():
-    result = {}
-
-    sensor_list_cmd = "sbs db exec \"select serial_number, id from sensor;\""
-    sensor_list_bytes = subprocess.check_output(sensor_list_cmd, shell=True)
-    sensor_list = sensor_list_bytes.decode()
-
-    for line in sensor_list.splitlines():
-        sensor_id = line.split("|")[1]
-
-        result[sensor_id] = []
-
-        ip_pairs_cmd = "sbs db exec \"select ca.ip as ip_a, cb.ip as ip_b from activity a left join activity_tag at on a.id = at.activity_id left join component ca on ca.id = a.cmp_a_component_id left join component cb on cb.id = a.cmp_b_component_id where a.sensor_id = '"+sensor_id+"' and at.tag_id ='ARP' and ca.ip is not NULL and ca.mac != 'ff:ff:ff:ff:ff:ff' and cb.ip is not NULL and cb.mac != 'ff:ff:ff:ff:ff:ff';\""
-        
-        ip_pairs_bytes = subprocess.check_output(ip_pairs_cmd, shell=True)
-        ip_pairs = ip_pairs_bytes.decode()
-
-        for line in ip_pairs.splitlines():
-            ips = line.split("|")
-
-            result[sensor_id].append(ips)
-
-    return result
-    
+import csv   
 
 def compute_subnets(raw_data, p, s):
     # Subnet List for printing
@@ -116,27 +76,15 @@ def compute_subnets(raw_data, p, s):
     for n in list(wellconfigured):
         for nn in list(wellconfigured):
             if nn != n and nn in n:
-                try:
-                    wellconfigured.remove(nn)
-                except:
-                    pass
+                wellconfigured.discard(nn)
             if nn != n and n in nn:
-                try:
-                    wellconfigured.remove(n)
-                except:
-                    pass
+                wellconfigured.discard(n)
     for n in list(notwellconfigured):
         for nn in list(notwellconfigured):
             if nn != n and nn in n:
-                try:
-                    notwellconfigured.remove(nn)
-                except:
-                    pass
+                notwellconfigured.discard(nn)
             if nn != n and n in nn:
-                try:
-                    notwellconfigured.remove(n)
-                except:
-                    pass
+                notwellconfigured.discard(n)
 
     return wellconfigured, notwellconfigured
 
@@ -148,15 +96,13 @@ def write_subnets(wellconfigured, notwellconfigured):
 
         sorted_networks = sorted(list(wellconfigured))    
         for subnet in sorted_networks:
-            # Determine if the subnet is well-configured or misconfigured
             status = 'Well-Configured'
             # Write each subnet and its status to the CSV file
             csvwriter.writerow([str(subnet), status,str(subnet),'group-description','#441e91','0'])
 
-        sorted_networks = sorted(list(notwellconfigured))   
-        for subnet in sorted_networks:
-            # Determine if the subnet is well-configured or misconfigured
-            status = 'Misconfigured'
-            # Write each subnet and its status to the CSV file
-            csvwriter.writerow([str(subnet), status,str(subnet),'group-description','#441e91','0'])
+        # sorted_networks = sorted(list(notwellconfigured))   
+        # for subnet in sorted_networks:
+        #     status = 'Misconfigured'
+        #     # Write each subnet and its status to the CSV file
+        #     csvwriter.writerow([str(subnet), status,str(subnet),'group-description','#441e91','0'])
     
