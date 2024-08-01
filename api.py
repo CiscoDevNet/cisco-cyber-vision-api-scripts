@@ -125,11 +125,12 @@ class APISession:
     it will fail, use SCVSession instead
     """
 
-    def __init__(self, host: str, port: int, token: str):
+    def __init__(self, host: str, port: int, token: str, proxy: str):
         urllib3.disable_warnings()
         self.host = host
         self.port = port
         self.token = token
+        self.proxy = proxy
 
     def _get_url(self, endpoint):
         return urljoin(f"https://{self.host}:{self.port}", endpoint)
@@ -158,6 +159,8 @@ class APISession:
     def __enter__(self):
         self.session = requests.Session()
         self.session.verify = False
+        if self.proxy != '':
+            self.session.proxies = {'http': self.proxy, 'https': self.proxy}
 
         # Add token to every requests
         self.session.headers.update({"x-token-id": self.token})
