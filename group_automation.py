@@ -74,7 +74,7 @@ def main():
 
     if args.command_export:
         ccv_auto_discover_networks.main(p , s)
-        return device.device_export_group(cvconfig.center_ip, center_port, cvconfig.token, devices_file,csv_delimiter, csv_encoding)
+        return device.device_export_group(cvconfig.center_ip, center_port, cvconfig.token, "", devices_file,csv_delimiter, csv_encoding)
     
     elif args.command_import:
         if not groups_file :
@@ -91,6 +91,7 @@ def set_conf(arg,conf):
     if arg and arg != conf:
         return arg
     return conf
+
 def manu_groupping():
     # Deleting all groups in the DB
     group.group_delete_all(cvconfig.center_ip, cvconfig.center_port, cvconfig.token)
