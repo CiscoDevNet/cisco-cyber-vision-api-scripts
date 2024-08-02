@@ -113,6 +113,7 @@ def discover_networks(p , s, center_ip, center_port, token, proxy):
 # must return a dictionary keyed by sensor id containing lists of ip pairs
 # like { "sensor_id": [(ip1,ip2), (ip1,ip3)] }
 def get_data_from_db():
+    print("LOG: Fetching data from DB")
     result = {}
 
     sensor_list_cmd = "sbs db exec \"select serial_number, id from sensor;\""
@@ -138,6 +139,7 @@ def get_data_from_db():
 
 def get_data_from_api(center_ip, center_port, token, proxy):
     # from api we don't have sensor info, should not be a problem
+    print("LOG: Fetching data from API")
     result = {"all_sensor": []}
 
     with api.APISession(center_ip, center_port, token, proxy) as session:
@@ -149,7 +151,8 @@ def get_data_from_api(center_ip, center_port, token, proxy):
                 if tag["id"] == "ARP":
                     arp = True
                     break
-            if not arp or not "ip" in act["left"] or not "ip" in act["right"]:
+            if not arp or not "ip" in act["left"] or not "ip" in act["right"] or \
+                int(act["left"]["mac"][0:2], 16) & 1 or int(act["right"]["mac"][0:2], 16):
                 continue
 
             

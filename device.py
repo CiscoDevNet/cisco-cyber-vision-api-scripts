@@ -348,9 +348,14 @@ def device_update(center_ip, center_port, token, proxy, filename,csv_delimiter, 
             route = "/api/3.0/groups"
             groups = api.get_route(session, route)
             group_dict = defaultdict()
+            groups_update_comp = {}
+            groups_update_device = {}
             for g in groups:
                 group_dict[g['label']] = g
             
+                groups_update_comp[g['label']] = []
+                groups_update_device[g['label']] = []
+
             reader = csv.DictReader(csvfile, delimiter=csv_delimiter)
             for row in reader:
                 # devices or component
@@ -362,18 +367,10 @@ def device_update(center_ip, center_port, token, proxy, filename,csv_delimiter, 
                     if not row['group-name'] in group_dict:
                         print(f"ERR: Device '{row['device-name']}' -  Group '{row['group-name']}' does not exist ")
                     else:
-                        print(f"LOG: Device '{row['device-name']}' - Putting in group '{row['group-name']}'")
-                        group = group_dict[row['group-name']]
-                        route = f"/api/3.0/groups/{group['id']}"
-
-                        json = {
-                            "op": "add",
-                            "path": f"/{path}",
-                            "value": [row['device-id']],
-                        }
-                        ret = api.patch_route(session, route, json)
-                        if ret.status_code != 200:
-                            print(f"ERROR: Calling [PATCH] {route} got error code {ret.status_code}")
+                        if path == "components":
+                            groups_update_comp[row['group-name']].append(row['device-id'])
+                        elif path == "devices":
+                            groups_update_device[row['group-name']].append(row['device-id'])
 
                 if 'device-custom-name' in row and row['device-custom-name']:
                     custom_name = row['device-custom-name']
@@ -385,6 +382,33 @@ def device_update(center_ip, center_port, token, proxy, filename,csv_delimiter, 
                     ret = api.post_route(session, route, json)
                     if ret.status_code != 200:
                         print(f"ERROR: Calling [POST] {route} got error code {ret.status_code}")
+
+            for g, ids in groups_update_comp.items():
+                if len(ids) > 0:
+                    print(f"LOG: Update Group '{g}' - with {len(ids)} components")
+                    group = group_dict[g]
+                    route = f"/api/3.0/groups/{group['id']}"
+                    json = {
+                        "op": "add",
+                        "path": f"/components",
+                        "value": ids,
+                    }
+                    ret = api.patch_route(session, route, json)
+                    if ret.status_code != 200:
+                        print(f"ERROR: Calling [PATCH] {route} got error code {ret.status_code}")
+            for g, ids in groups_update_device.items():
+                if len(ids) > 0:
+                    print(f"LOG: Update Group '{g}' - with {len(ids)} devices")
+                    group = group_dict[g]
+                    route = f"/api/3.0/groups/{group['id']}"
+                    json = {
+                        "op": "add",
+                        "path": f"/devices",
+                        "value": ids,
+                    }
+                    ret = api.patch_route(session, route, json)
+                    if ret.status_code != 200:
+                        print(f"ERROR: Calling [PATCH] {route} got error code {ret.status_code}")
     
     return
 

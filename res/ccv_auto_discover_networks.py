@@ -105,4 +105,6 @@ def write_subnets(wellconfigured, notwellconfigured):
         #     status = 'Misconfigured'
         #     # Write each subnet and its status to the CSV file
         #     csvwriter.writerow([str(subnet), status,str(subnet),'group-description','#441e91','0'])
+
+        print("LOG: Exported %d subnets into subnets.csv"%len(wellconfigured))
     
