@@ -152,7 +152,7 @@ def get_data_from_api(center_ip, center_port, token, proxy):
                     arp = True
                     break
             if not arp or not "ip" in act["left"] or not "ip" in act["right"] or \
-                int(act["left"]["mac"][0:2], 16) & 1 or int(act["right"]["mac"][0:2], 16):
+                int(act["left"]["mac"][0:2], 16) & 1 or int(act["right"]["mac"][0:2], 16) & 1:
                 continue
 
             
