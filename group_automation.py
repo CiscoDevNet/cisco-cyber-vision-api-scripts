@@ -177,13 +177,18 @@ def manu_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_enco
         reader_dev = csv.DictReader(csvfile, delimiter=cvconfig.csv_delimiter)
         for dev in reader_dev:
             devices[dev['device-id']] = dev
+            ips = json.loads(dev['device-ip'].replace("'",'"'))
             with open(groups_file, 'r') as csvfile:
                 reader_group = csv.DictReader(csvfile, delimiter=cvconfig.csv_delimiter)
                 for grp in reader_group:
-                    ips = json.loads(dev['device-ip'].replace("'",'"'))
-                    if ips and ipaddress.ip_address(ips[0]) in ipaddress.ip_network(grp['Subnet']):
-                        devices[dev['device-id']]['group-name'] = grp["group-name"]
-                        updated = updated + 1 
+                    for ip in ips:
+                        if ipaddress.ip_address(ip) in ipaddress.ip_network(grp['Subnet']):
+                            devices[dev['device-id']]['group-name'] = grp["group-name"]
+                            updated = updated + 1 
+                            break
+                    else:
+                        continue
+                    break
 
     print("LOG: Updated %d devices with group information based on subnet"%updated)
 
@@ -223,13 +228,18 @@ def auto_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_enco
         reader_dev = csv.DictReader(csvfile, delimiter=csv_delimiter)
         for dev in reader_dev:
             devices[dev['device-id']] = dev
+            ips = json.loads(dev['device-ip'].replace("'",'"'))
             with open(groups_file, 'r') as csvfile:
                 reader_group = csv.DictReader(csvfile, delimiter=csv_delimiter)
                 for grp in reader_group:
-                    ips = json.loads(dev['device-ip'].replace("'",'"'))
-                    if ips and ipaddress.ip_address(ips[0]) in ipaddress.ip_network(grp['Subnet']):
-                        devices[dev['device-id']]['group-name'] = grp["group-name"]
-                        updated = updated + 1
+                    for ip in ips:
+                        if ips and ipaddress.ip_address(ip) in ipaddress.ip_network(grp['Subnet']):
+                            devices[dev['device-id']]['group-name'] = grp["group-name"]
+                            updated = updated + 1
+                            break
+                    else:
+                        continue
+                    break
 
     print("LOG: Updated %d devices with group information based on subnet"%updated)
 
