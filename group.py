@@ -102,29 +102,32 @@ def group_import(center_ip, center_port, token, proxy, filename,csv_delimiter, c
     with open(filename, 'r') as csvfile:
         with api.APISession(center_ip, center_port, token, proxy) as session:            
             reader = csv.DictReader(csvfile, delimiter=csv_delimiter)
-            for row in reader:
-                if not 'group-name' in row or not row['group-name']:
-                    continue
+            
+            group_import_lib(session, reader)
 
-                print(f"LOG: Group '{row['group-name']}' - Creating...")
+def group_import_lib(session, reader):
+    for row in reader:
+        if not 'group-name' in row or not row['group-name']:
+            continue
 
-                industrial_impact = 0
-                if 'group-industrial-impact' in row and row['group-industrial-impact']:
-                    industrial_impact = int(row['group-industrial-impact'])
+        print(f"LOG: Group '{row['group-name']}' - Creating...")
 
-                route = f"/api/3.0/groups"
-                json = {
-                    "label": row['group-name'],
-                    "description": row['group-description'],
-                    "color": row['group-color'],
-                    "criticalness": industrial_impact,
-                }
-                ret = api.post_route(session, route, json)
-                if ret.status_code == 409:
-                    print(f"LOG: Group '{row['group-name']}' - Already exists")
-                elif ret.status_code != 200:
-                    print(f"ERROR: Calling [POST] {route} got error code {ret.status_code}")
+        industrial_impact = 0
+        if 'group-industrial-impact' in row and row['group-industrial-impact']:
+            industrial_impact = int(row['group-industrial-impact'])
 
+        route = f"/api/3.0/groups"
+        json = {
+            "label": row['group-name'],
+            "description": row['group-description'],
+            "color": row['group-color'],
+            "criticalness": industrial_impact,
+        }
+        ret = api.post_route(session, route, json)
+        if ret.status_code == 409:
+            print(f"LOG: Group '{row['group-name']}' - Already exists")
+        elif ret.status_code != 200:
+            print(f"ERROR: Calling [POST] {route} got error code {ret.status_code}")
 
 if __name__ == "__main__":
     main()
