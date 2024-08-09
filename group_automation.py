@@ -13,6 +13,8 @@ import os
 import subprocess
 import sys
 import ipaddress
+import netaddr
+
 if sys.version_info[0] < 3 and sys.version_info[1] < 3:
     import platform
     raise Exception("Must be using above Python 3.3 - now at %s"%platform.python_version())
@@ -58,8 +60,14 @@ def main():
                                help="push new groups from a CSV file\n",
                                action="store_true", default=False, dest="command_import")
     command_group.add_argument("--auto",
-                               help="Create groups automaticcally from a CSV file\n",
+                               help="Create groups automatically from detected subnets\n",
                                action="store_true", default=False, dest="command_auto")
+    command_group.add_argument("--auto_to_org",
+                               help="Create network organization from detected subnets\n",
+                               action="store_true", default=False, dest="command_auto_to_net")
+    command_group.add_argument("--auto_from_org",
+                               help="Create groups automatically from network organization\n",
+                               action="store_true", default=False, dest="command_auto_from_net")
 
 
     args = parser.parse_args()
@@ -90,6 +98,14 @@ def main():
   
     elif args.command_auto:
         auto_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_encoding)
+        return
+
+    elif args.command_auto_to_net:
+        auto_to_net_org(center_ip, center_port, token, proxy)
+        return
+    
+    elif args.command_auto_from_net:
+        auto_from_net_org(center_ip, center_port, token, proxy)
         return
 
     parser.print_help()
@@ -257,6 +273,95 @@ def auto_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_enco
             print(f"LOG: Exported {len(devices)} into '{new_devices_file}'")
 
     device.device_update(center_ip, center_port, token, proxy, new_devices_file, csv_delimiter, csv_encoding)
+
+def auto_to_net_org(center_ip, center_port, token, proxy):
+    if p >= 1 or p <= 0:
+        print("p has to be within ]0, 1[")
+        quit()
+    
+    #data = get_data_from_db()
+    data = get_data_from_api(center_ip, center_port, token, proxy)
+    wellconf, notwellconf = ccv_auto_discover_networks.compute_subnets(data, p, s)
+
+    networks = []
+    for n in wellconf:
+        vlan_id = None
+        network = {
+            "name": str(n),
+            "type": 'OT Internal',
+            "ipRange": str(n),
+            "vlanId": vlan_id,
+            "duplicated": False,
+            "splitDevicesPerSensor": False
+        }
+
+        networks.append(network)
+
+    with api.APISession(center_ip, center_port, token, proxy) as session:
+        response = api.post_route(session, '/api/3.0/networks/', json=networks)
+        if response.status_code != 200:
+            print('ERROR: Failed to create custom networks')
+            print(f'Response Status :{response.status_code}')
+            try:
+                print(f'Response Body: {json.dumps(response.json(), indent=2)}')
+            except BaseException:
+                print(f'Response Body: {response.content.decode()}')
+        else:
+            print('INFO: Successfully created custom networks')
+
+    return
+
+def auto_from_net_org(center_ip, center_port, token, proxy):
+    #group.group_delete_all(center_ip, center_port, token, proxy)
+
+    networks = []
+    with api.APISession(center_ip, center_port, token, proxy) as session:
+        networks = api.get_route(session, '/api/3.0/networks')
+    
+        net = {}
+        for n in networks:
+            net[ipaddress.ip_network(n["ipRange"])] = n["name"]
+
+        # build group tree: only take smallest subnet for now
+        leaf_groups = []
+        for n in net.keys():
+
+            for i in range(len(leaf_groups)):
+                if n.version == leaf_groups[i].version and n.subnet_of(leaf_groups[i]):
+                    leaf_groups[i] = n
+                    break
+            else:
+                leaf_groups.append(n)
+
+        group_data = []
+        for g in leaf_groups:
+            group_data.append({'group-name':str(g), 
+                               'group-description':str(g),
+                               'group-color': '#441e91'})
+
+        
+        group.group_delete_all(center_ip, center_port, token, proxy)
+        group.group_import_lib(session, group_data)
+
+        devices = device.device_export_lib(session)
+        device_data = []
+        for d in devices:
+            if 'ip' in d:
+                for ip in d['ip']:
+                    for n in leaf_groups:
+                        if ipaddress.ip_address(ip) in ipaddress.ip_network(n):
+                            device_data.append({
+                                'device-isdevice':str(d['isDevice']),
+                                'group-name':str(n),
+                                'device-id':d['id']
+                            })
+                            break
+                    else:
+                        continue
+                    break
+
+        device.device_update_lib(session, device_data)
+        
 
 if __name__ == "__main__":
     main()
