@@ -38,7 +38,7 @@ def main():
                                action="store_true", default=False, dest="create")
 
     command_group.add_argument("--export",
-                               help="Export all cusrom networks into a CSV file\n",
+                               help="Export all custom networks into a CSV file\n",
                                action="store_true", default=False, dest="command_export")
     command_group.add_argument("--delete",
                                help="Delete all custom networks",
