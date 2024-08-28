@@ -299,17 +299,20 @@ def build_cred_row(row,cred,d):
 # Main Functions
 # 
 
+def device_export_lib(session):
+    # hack to get all devices via 'All data' preset, should be removed later
+    presets = api.get_route(session, '/api/3.0/presets')
+    all_id = 0
+    for p in presets:
+        if p['label'] == 'All data':
+            all_id = p['id']
+            break
+    route = f"/api/3.0/presets/{all_id}/visualisations/networknode-list"
+    return api.get_route(session, route)
+
 def device_export(center_ip, center_port, token, proxy, filename,csv_delimiter, csv_encoding):
     with api.APISession(center_ip, center_port, token, proxy) as session:
-        # hack to get all devices via 'All data' preset, should be removed later
-        presets = api.get_route(session, '/api/3.0/presets')
-        all_id = 0
-        for p in presets:
-            if p['label'] == 'All data':
-                all_id = p['id']
-                break
-        route = f"/api/3.0/presets/{all_id}/visualisations/networknode-list"
-        devices = api.get_route(session, route)
+        devices = device_export_lib(session)
         
         # Loop to build devices, credentials, vulns list
         write_devices(filename,csv_encoding,csv_delimiter,devices,session)
@@ -317,76 +320,85 @@ def device_export(center_ip, center_port, token, proxy, filename,csv_delimiter, 
         write_vulns(filename,csv_encoding,csv_delimiter,session,devices)
         # If needed store credentials in another file
         write_credentials(filename,csv_encoding,csv_delimiter,session,devices)
-        
-    return
 
 def device_export_group(center_ip, center_port, token, proxy, filename,csv_delimiter, csv_encoding):
     with api.APISession(center_ip, center_port, token, proxy) as session:
-        # hack to get all devices via 'All data' preset, should be removed later
-        presets = api.get_route(session, '/api/3.0/presets')
-        all_id = 0
-        for p in presets:
-            if p['label'] == 'All data':
-                all_id = p['id']
-                break
-        route = f"/api/3.0/presets/{all_id}/visualisations/networknode-list"
-        devices = api.get_route(session, route)
+        devices = device_export_lib(session)
 
         # Loop to build devices, credentials, vulns list
         write_devices_group(filename,csv_encoding,csv_delimiter,devices,session)
-        # If needed store vulns in another file
-        #write_vulns(filename,csv_encoding,csv_delimiter,session,devices)
-        # If needed store credentials in another file
-        #write_credentials(filename,csv_encoding,csv_delimiter,session,devices)
-
-    return
 
 def device_update(center_ip, center_port, token, proxy, filename,csv_delimiter, csv_encoding):
     with open(filename, 'r') as csvfile:
         with api.APISession(center_ip, center_port, token, proxy) as session:
-            # get all groups to match their name and find their ids
-            route = "/api/3.0/groups"
-            groups = api.get_route(session, route)
-            group_dict = defaultdict()
-            for g in groups:
-                group_dict[g['label']] = g
-            
             reader = csv.DictReader(csvfile, delimiter=csv_delimiter)
-            for row in reader:
-                # devices or component
-                path = "devices"
-                if row['device-isdevice'].upper() == 'FALSE':
-                    path = "components"
+            device_update_lib(session, reader)
 
-                if 'group-name' in row and row['group-name']:
-                    if not row['group-name'] in group_dict:
-                        print(f"ERR: Device '{row['device-name']}' -  Group '{row['group-name']}' does not exist ")
-                    else:
-                        print(f"LOG: Device '{row['device-name']}' - Putting in group '{row['group-name']}'")
-                        group = group_dict[row['group-name']]
-                        route = f"/api/3.0/groups/{group['id']}"
-
-                        json = {
-                            "op": "add",
-                            "path": f"/{path}",
-                            "value": [row['device-id']],
-                        }
-                        ret = api.patch_route(session, route, json)
-                        if ret.status_code != 200:
-                            print(f"ERROR: Calling [PATCH] {route} got error code {ret.status_code}")
-
-                if 'device-custom-name' in row and row['device-custom-name']:
-                    custom_name = row['device-custom-name']
-                    print(f"LOG: Device '{row['device-name']}' - setting custom name '{row['device-custom-name']}'")
-                    route = f"/api/3.0/{path}/{row['device-id']}/label"
-                    json = {
-                            "name": row['device-custom-name'],
-                    }
-                    ret = api.post_route(session, route, json)
-                    if ret.status_code != 200:
-                        print(f"ERROR: Calling [POST] {route} got error code {ret.status_code}")
+def device_update_lib(session, reader):
+    # get all groups to match their name and find their ids
+    route = "/api/3.0/groups"
+    groups = api.get_route(session, route)
+    group_dict = defaultdict()
+    groups_update_comp = {}
+    groups_update_device = {}
+    for g in groups:
+        group_dict[g['label']] = g
     
-    return
+        groups_update_comp[g['label']] = []
+        groups_update_device[g['label']] = []
+
+    for row in reader:
+        # devices or component
+        path = "devices"
+        if row['device-isdevice'].upper() == 'FALSE':
+            path = "components"
+
+        if 'group-name' in row and row['group-name']:
+            if not row['group-name'] in group_dict:
+                print(f"ERR: Device '{row['device-name']}' -  Group '{row['group-name']}' does not exist ")
+            else:
+                if path == "components":
+                    groups_update_comp[row['group-name']].append(row['device-id'])
+                elif path == "devices":
+                    groups_update_device[row['group-name']].append(row['device-id'])
+
+        if 'device-custom-name' in row and row['device-custom-name']:
+            custom_name = row['device-custom-name']
+            print(f"LOG: Device '{row['device-name']}' - setting custom name '{row['device-custom-name']}'")
+            route = f"/api/3.0/{path}/{row['device-id']}/label"
+            json = {
+                    "name": row['device-custom-name'],
+            }
+            ret = api.post_route(session, route, json)
+            if ret.status_code != 200:
+                print(f"ERROR: Calling [POST] {route} got error code {ret.status_code}")
+
+    for g, ids in groups_update_comp.items():
+        if len(ids) > 0:
+            print(f"LOG: Update Group '{g}' - with {len(ids)} components")
+            group = group_dict[g]
+            route = f"/api/3.0/groups/{group['id']}"
+            json = {
+                "op": "add",
+                "path": f"/components",
+                "value": ids,
+            }
+            ret = api.patch_route(session, route, json)
+            if ret.status_code != 200:
+                print(f"ERROR: Calling [PATCH] {route} got error code {ret.status_code}")
+    for g, ids in groups_update_device.items():
+        if len(ids) > 0:
+            print(f"LOG: Update Group '{g}' - with {len(ids)} devices")
+            group = group_dict[g]
+            route = f"/api/3.0/groups/{group['id']}"
+            json = {
+                "op": "add",
+                "path": f"/devices",
+                "value": ids,
+            }
+            ret = api.patch_route(session, route, json)
+            if ret.status_code != 200:
+                print(f"ERROR: Calling [PATCH] {route} got error code {ret.status_code}")
 
 if __name__ == "__main__":
     main()
