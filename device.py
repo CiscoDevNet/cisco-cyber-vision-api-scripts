@@ -7,6 +7,7 @@ from collections import defaultdict
 import csv
 import os
 import json
+import socket
 
 import cvconfig
 import api
@@ -29,6 +30,10 @@ def main():
                         help="CSV file encoding, default is %s" % cvconfig.csv_encoding)
     parser.add_argument("--delimiter", dest="csv_delimiter",
                         help="CSV file delimiter, default is %s" % cvconfig.csv_delimiter)
+    parser.add_argument("--reversedns_name", dest="rdns_name", action="store_true",
+                        help="Set custom name from reverse dns")
+    #parser.add_argument("--reversedns__prop", dest="rdns_prop", action="store_true",
+    #                    help="Set custom property from reverse dns")
     
     parser.add_argument("--filename", dest="filename", help="Use this filename", default="devices.csv")
     # Main Command Parsing
@@ -39,6 +44,9 @@ def main():
     command_group.add_argument("--update",
                                help="Update existing groups with devices from a CSV file\n",
                                action="store_true", default=False, dest="command_update")
+    command_group.add_argument("--update_dns",
+                               help="Update custom name or property from reverse dns\n",
+                               action="store_true", default=False, dest="command_dns")
     command_group.add_argument("--unknown-vendors",
                                help="Get the list of unknown vendords\n",
                                action="store_true", default=False, dest="command_vendors")
@@ -53,14 +61,18 @@ def main():
     proxy = set_conf(args.proxy, cvconfig.proxy)
     csv_encoding = set_conf(args.csv_encoding, cvconfig.csv_encoding)
     csv_delimiter = set_conf(args.csv_delimiter, cvconfig.csv_delimiter)
+    rdns_name = args.rdns_name
+    rdns_prop = False # args.rdns_prop
 
     if not token or not center_ip:
         print("TOKEN and CENTER_IP are mandatory, check cvconfig.py or us --token/--center-ip")
 
     if args.command_export:
-        return device_export(center_ip, center_port, token, proxy, args.filename,csv_delimiter, csv_encoding)
+        return device_export(center_ip, center_port, token, proxy, args.filename,csv_delimiter, csv_encoding, rdns_name, rdns_prop)
     elif args.command_update:
         return device_update(center_ip, center_port, token, proxy, args.filename, csv_delimiter, csv_encoding)
+    elif args.command_dns:
+        return 
     elif args.command_vendors:
         return get_unkown_vendors(center_ip, center_port, token, proxy)
     
@@ -71,13 +83,29 @@ def set_conf(arg,conf):
         return arg
     return conf
  
-def build_device_row(session,row,d):
+def revers_dns(ips):
+    for ip in ips:
+        if ip != "":
+            res = socket.getfqdn(ip)
+
+            if res != ip:
+                return res
+    return ""
+    
+
+def build_device_row(session,row,d, rdns_name, rdns_prop):
     try:
+        if rdns_name or rdns_prop:
+            dnsname = revers_dns(d['ip'])
+            if dnsname != "" and rdns_name:
+                row['device-custom-name'] = dnsname
+            else:
+                row['device-custom-name'] = d['customLabel']
+
         row['device-id'] = d['id']
         row['device-mac'] = d['mac']
         row['device-ip'] = d['ip']
         row['device-name'] = d['originalLabel']
-        row['device-custom-name'] = d['customLabel']
         row['device-tags'] = "-".join(sorted(t['label'] for t in d['tags']))
         row['device-riskscore'] = d['riskScore']
         row['device-network'] = d.get('situation')
@@ -100,7 +128,8 @@ def build_device_row(session,row,d):
             row['group-industrial-impact'] = d['group'].get('criticalness')
     except KeyError as e:
         print("KeyError: {} for device {}".format(e, row['device-id']))
-    except Exception as e: print(e)
+    except Exception as e: 
+        print(e)
 
 def build_device_riskscore(session,row,d):
     # RiskScore
@@ -164,7 +193,7 @@ def get_unkown_vendors(center_ip, center_port, token, proxy):
     print(json.dumps(unknown_vendors,sort_keys=True, indent=4))
     return
 
-def write_devices(filename,csv_encoding,csv_delimiter,devices,session):
+def write_devices(filename,csv_encoding,csv_delimiter,devices,session, rdns_name, rdns_prop):
     with open(filename, 'w', encoding=csv_encoding) as csvfile:
         fieldnames = ['device-id','device-mac','device-ip','device-name','device-custom-name','device-tags','device-riskscore',
                     'group-name','group-color','group-industrial-impact',
@@ -179,7 +208,7 @@ def write_devices(filename,csv_encoding,csv_delimiter,devices,session):
         writer.writeheader()
         for d in devices:
             row = {}
-            build_device_row(session,row,d)
+            build_device_row(session,row,d, rdns_name, rdns_prop)
             build_device_riskscore(session,row,d)
             writer.writerow(row)
         print(f"LOG: Exported {len(devices)} into '{filename}'")
@@ -310,12 +339,12 @@ def device_export_lib(session):
     route = f"/api/3.0/presets/{all_id}/visualisations/networknode-list"
     return api.get_route(session, route)
 
-def device_export(center_ip, center_port, token, proxy, filename,csv_delimiter, csv_encoding):
+def device_export(center_ip, center_port, token, proxy, filename,csv_delimiter, csv_encoding, rdns_name, rdns_prop):
     with api.APISession(center_ip, center_port, token, proxy) as session:
         devices = device_export_lib(session)
         
         # Loop to build devices, credentials, vulns list
-        write_devices(filename,csv_encoding,csv_delimiter,devices,session)
+        write_devices(filename,csv_encoding,csv_delimiter,devices,session, rdns_name, rdns_prop)
         # If needed store vulns in another file
         write_vulns(filename,csv_encoding,csv_delimiter,session,devices)
         # If needed store credentials in another file
