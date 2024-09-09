@@ -30,10 +30,8 @@ def main():
                         help="CSV file encoding, default is %s" % cvconfig.csv_encoding)
     parser.add_argument("--delimiter", dest="csv_delimiter",
                         help="CSV file delimiter, default is %s" % cvconfig.csv_delimiter)
-    parser.add_argument("--reversedns_name", dest="rdns_name", action="store_true",
+    parser.add_argument("--reversedns", dest="rdns_name", action="store_true",
                         help="Set custom name from reverse dns")
-    #parser.add_argument("--reversedns__prop", dest="rdns_prop", action="store_true",
-    #                    help="Set custom property from reverse dns")
     
     parser.add_argument("--filename", dest="filename", help="Use this filename", default="devices.csv")
     # Main Command Parsing
@@ -62,13 +60,12 @@ def main():
     csv_encoding = set_conf(args.csv_encoding, cvconfig.csv_encoding)
     csv_delimiter = set_conf(args.csv_delimiter, cvconfig.csv_delimiter)
     rdns_name = args.rdns_name
-    rdns_prop = False # args.rdns_prop
 
     if not token or not center_ip:
         print("TOKEN and CENTER_IP are mandatory, check cvconfig.py or us --token/--center-ip")
 
     if args.command_export:
-        return device_export(center_ip, center_port, token, proxy, args.filename,csv_delimiter, csv_encoding, rdns_name, rdns_prop)
+        return device_export(center_ip, center_port, token, proxy, args.filename,csv_delimiter, csv_encoding, rdns_name)
     elif args.command_update:
         return device_update(center_ip, center_port, token, proxy, args.filename, csv_delimiter, csv_encoding)
     elif args.command_dns:
@@ -93,14 +90,16 @@ def revers_dns(ips):
     return ""
     
 
-def build_device_row(session,row,d, rdns_name, rdns_prop):
+def build_device_row(session,row,d, rdns_name):
     try:
-        if rdns_name or rdns_prop:
+        if rdns_name:
             dnsname = revers_dns(d['ip'])
             if dnsname != "" and rdns_name:
                 row['device-custom-name'] = dnsname
             else:
                 row['device-custom-name'] = d['customLabel']
+        else:
+            row['device-custom-name'] = d['customLabel']
 
         row['device-id'] = d['id']
         row['device-mac'] = d['mac']
@@ -193,7 +192,7 @@ def get_unkown_vendors(center_ip, center_port, token, proxy):
     print(json.dumps(unknown_vendors,sort_keys=True, indent=4))
     return
 
-def write_devices(filename,csv_encoding,csv_delimiter,devices,session, rdns_name, rdns_prop):
+def write_devices(filename,csv_encoding,csv_delimiter,devices,session, rdns_name):
     with open(filename, 'w', encoding=csv_encoding) as csvfile:
         fieldnames = ['device-id','device-mac','device-ip','device-name','device-custom-name','device-tags','device-riskscore',
                     'group-name','group-color','group-industrial-impact',
@@ -208,7 +207,7 @@ def write_devices(filename,csv_encoding,csv_delimiter,devices,session, rdns_name
         writer.writeheader()
         for d in devices:
             row = {}
-            build_device_row(session,row,d, rdns_name, rdns_prop)
+            build_device_row(session,row,d, rdns_name)
             build_device_riskscore(session,row,d)
             writer.writerow(row)
         print(f"LOG: Exported {len(devices)} into '{filename}'")
@@ -339,12 +338,12 @@ def device_export_lib(session):
     route = f"/api/3.0/presets/{all_id}/visualisations/networknode-list"
     return api.get_route(session, route)
 
-def device_export(center_ip, center_port, token, proxy, filename,csv_delimiter, csv_encoding, rdns_name, rdns_prop):
+def device_export(center_ip, center_port, token, proxy, filename,csv_delimiter, csv_encoding, rdns_name):
     with api.APISession(center_ip, center_port, token, proxy) as session:
         devices = device_export_lib(session)
         
         # Loop to build devices, credentials, vulns list
-        write_devices(filename,csv_encoding,csv_delimiter,devices,session, rdns_name, rdns_prop)
+        write_devices(filename,csv_encoding,csv_delimiter,devices,session, rdns_name)
         # If needed store vulns in another file
         write_vulns(filename,csv_encoding,csv_delimiter,session,devices)
         # If needed store credentials in another file
