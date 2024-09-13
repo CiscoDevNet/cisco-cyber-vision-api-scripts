@@ -118,6 +118,12 @@ def patch_route(session, route, json):
     return session.patch(route,json=json)
 
 
+def put_route(session, route, json):
+    #print(f"DEBUG: [PUT] Calling {route}")
+    #print(f"DEBUG: [PUT] Payload: {json}")
+    return session.put(route, json=json)
+
+
 class APISession:
     """
     Gives a Cyber Vision session to call the public API endpoints
