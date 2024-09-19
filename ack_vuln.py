@@ -97,7 +97,6 @@ def build_device_row(row, d):
         row['device-mac'] = d['mac']
         row['device-custom-name'] = d['customLabel']
         row['device-riskscore'] = d['riskScore']
-        row['device-isdevice'] = d['isDevice']
     except KeyError as e:
         print("KeyError: {} for device {}".format(e, row['device-id']))
     except Exception as e:
