@@ -56,7 +56,7 @@ Groups can be added manually or using the group.py script
 
 ![](CCV-auto-group.png)
 
-7. Acknowledging vulnerabilities in bulk
+6. Acknowledging vulnerabilities in bulk
 
 6.1 --export-affected-devices: use ack_vuln.py with export-affected-devices options to export vulnerable devices into CVS file. This script takes two additional parameters \
 a. --cve-id [mandatory] \
@@ -74,7 +74,8 @@ a. --cve-id [mandatory] \
 b. --ack-comments [optional] if this value is not provided, it takes default value of "Default acknowledge comment"
  
 E.g., ``` python3 ack_vuln.py --ack-by-devices --cve-id=CVE-2014-0317 --ack-comments="Testing Bulk Ack from Python"```
- 
+
+Note: Above script does not refresh preset, if you need latest data then kindly refresh preset from GUI and then run above scripts. 
 ## Requirements
 
 [requirements.txt](requirements.txt)

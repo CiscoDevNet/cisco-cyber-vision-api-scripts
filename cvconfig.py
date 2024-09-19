@@ -20,5 +20,5 @@ csv_encoding = 'utf-8'
 csv_delimiter = ','
 
 # ack_vuln parameters
-preset_name = "All data"
-ack_comments = 'Default acknowledge comment'
+preset_name = 'All data'
+ack_comments = ''

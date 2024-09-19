@@ -28,10 +28,10 @@ def main():
     command_group = parser.add_mutually_exclusive_group()
     command_group.add_argument("--export-affected-devices", dest="command_export", default=False,
                                action="store_true",
-                               help="Export all affected devices into a CSV file")
+                               help="Export all affected devices of a given preset into a CSV file, If Preset name is not passed then \"All data\" preset is considered as default\n")
     command_group.add_argument("--ack-by-preset", dest="command_ack_by_preset", default=False,
                                action="store_true",
-                               help="Update all devices in this preset for given CVE ID \n")
+                               help="Update all devices in this preset for given CVE ID, If Preset name is not passed then \"All data\" preset is considered as default\n")
     command_group.add_argument("--ack-by-devices", dest="command_ack_by_devices", default=False,
                                action="store_true",
                                help="Update all devices from a CSV file for given CVE ID\n")
@@ -39,14 +39,11 @@ def main():
     parser.add_argument("--cve-id", dest="cve_id", required=True,
                         help="Specified the UUID of CVE")
 
-    parser.add_argument("--export-affected-devices-preset-name", dest="preset_name",
-                        help="Preset Name, default is %s" % cvconfig.preset_name)
-
-    parser.add_argument("--ack-by-preset-preset-name", dest="preset_name",
+    parser.add_argument("--preset-name", dest="preset_name",
                         help="Preset Name, default is %s" % cvconfig.preset_name)
 
     parser.add_argument("--ack-comments",  dest="ack_comments",
-                        help="Acknowledge comments, default is %s" % cvconfig.ack_comments)
+                        help="Acknowledge comments")
 
     parser.add_argument("--filename", dest="filename", default="vulnerable_devices.csv",
                         help="Use this filename")
@@ -57,6 +54,9 @@ def main():
     parser.add_argument("--encoding", dest="csv_encoding",
                         help="CSV file encoding, default is %s" % cvconfig.csv_encoding)
 
+    parser.add_argument("--proxy", dest="proxy", default=cvconfig.proxy,
+                        help="Specified the proxy to use (default: %s)" % cvconfig.proxy)
+
     args = parser.parse_args()
 
     # Handle Cyber Vision configuration
@@ -65,6 +65,7 @@ def main():
     center_port = set_conf(args.center_port, cvconfig.center_port)
     csv_encoding = set_conf(args.csv_encoding, cvconfig.csv_encoding)
     csv_delimiter = set_conf(args.csv_delimiter, cvconfig.csv_delimiter)
+    proxy = set_conf(args.proxy, cvconfig.proxy)
 
     # Handle default values
     ack_comments = set_conf(args.ack_comments, cvconfig.ack_comments)
@@ -73,11 +74,11 @@ def main():
         print("TOKEN and CENTER_IP are mandatory, check cvconfig.py or us --token/--center-ip")
 
     if args.command_export:
-        return export_vulnerable_devices(center_ip, center_port, token, args.filename, csv_delimiter, csv_encoding, args.cve_id, args.preset_name)
+        return export_vulnerable_devices(center_ip, center_port, token, proxy, args.filename, csv_delimiter, csv_encoding, args.cve_id, args.preset_name)
     elif args.command_ack_by_preset:
-        return ack_vulnerabilities_by_preset(center_ip, center_port, token, args.cve_id, args.preset_name, ack_comments)
+        return ack_vulnerabilities_by_preset(center_ip, center_port, token, proxy, args.cve_id, args.preset_name, ack_comments)
     elif args.command_ack_by_devices:
-        return ack_vulnerabilities_by_devices(center_ip, center_port, token, args.filename, csv_delimiter, csv_encoding, args.cve_id, ack_comments)
+        return ack_vulnerabilities_by_devices(center_ip, center_port, token, proxy, args.filename, csv_delimiter, args.cve_id, ack_comments)
     
     parser.print_help()
 
@@ -105,7 +106,7 @@ def build_device_row(row, d):
 
 def write_devices(filename, csv_encoding, csv_delimiter, devices):
     with open(filename, 'w', encoding=csv_encoding) as csvfile:
-        fieldnames = ['device-id', 'device-mac', 'device-ip', 'device-name', 'device-custom-name', 'device-tags', 'device-riskscore', 'device-isdevice']
+        fieldnames = ['device-id', 'device-mac', 'device-ip', 'device-name', 'device-custom-name', 'device-tags', 'device-riskscore']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=csv_delimiter)
         writer.writeheader()
         for d in devices:
@@ -115,16 +116,19 @@ def write_devices(filename, csv_encoding, csv_delimiter, devices):
         print(f"LOG: Exported {len(devices)} into '{filename}'")
 
 
-def export_vulnerable_devices(center_ip, center_port, token, filename, csv_delimiter, csv_encoding, cve_id, preset_name):
-    with api.APISession(center_ip, center_port, token) as session:
+def export_vulnerable_devices(center_ip, center_port, token, proxy, filename, csv_delimiter, csv_encoding, cve_id, preset_name):
+    if not preset_name:
+        print(f"WARN: --preset-name not passed, By default \"All data\" preset is considered")
+        preset_name = 'All data'
+
+    with api.APISession(center_ip, center_port, token, proxy) as session:
 
         route = f"/api/3.0/vulnerabilities?filter=cve:{cve_id}"
-        cveDetails = api.get_route(session, route)
+        cve_details = api.get_route(session, route)
         vulnerability_ids = []
-        for cveDetail in cveDetails:
+        for cveDetail in cve_details:
             vulnerability_ids.append(cveDetail['id'])
 
-        print(f"LOG: Found CVE {cve_id} with UUID {vulnerability_ids}")
         if not vulnerability_ids:
             print(f"ERR: CVE {cve_id} not found")
             return
@@ -132,9 +136,6 @@ def export_vulnerable_devices(center_ip, center_port, token, filename, csv_delim
         # hack to get all devices via 'All data' preset, should be removed later
         presets = api.get_route(session, '/api/3.0/presets')
         preset_id = 0
-        if not preset_name:
-            preset_name = 'All data'
-
         for p in presets:
             if p['label'] == preset_name:
                 preset_id = p['id']
@@ -160,8 +161,17 @@ def export_vulnerable_devices(center_ip, center_port, token, filename, csv_delim
     return
 
 
-def ack_vulnerabilities_by_preset(center_ip, center_port, token, cve_id, preset_name, ack_comments):
-    with api.APISession(center_ip, center_port, token) as session:
+def ack_vulnerabilities_by_preset(center_ip, center_port, token, proxy, cve_id, preset_name, ack_comments):
+    if not preset_name:
+        print(f"WARN: --preset-name not passed, By default \"All data\" preset is considered")
+        preset_name = 'All data'
+
+    if not ack_comments:
+        print(f"--ack-comments is mandatory parameter while acknowledging vulnerabilities")
+        print(f"Usage: python3 ack_vuln.py --ack-by-preset --cve-id CVE_ID --preset-name preset_name --ack-comments ack_comments")
+        return
+
+    with api.APISession(center_ip, center_port, token, proxy) as session:
         presets = api.get_route(session, '/api/3.0/presets')
         preset_id = 0
         if not preset_name:
@@ -177,12 +187,11 @@ def ack_vulnerabilities_by_preset(center_ip, center_port, token, cve_id, preset_
             return
 
         route = f"/api/3.0/vulnerabilities?filter=cve:{cve_id}"
-        cveDetails = api.get_route(session, route)
+        cve_details = api.get_route(session, route)
         vulnerability_ids = []
-        for cveDetail in cveDetails:
+        for cveDetail in cve_details:
             vulnerability_ids.append(cveDetail['id'])
 
-        print(f"LOG: Found CVE {cve_id} with UUID {vulnerability_ids}")
         if not vulnerability_ids:
             print(f"ERR: CVE {cve_id} not found")
             return
@@ -199,16 +208,22 @@ def ack_vulnerabilities_by_preset(center_ip, center_port, token, cve_id, preset_
             "deviceIds": device_ids,
             "comment": ack_comments
         }
-        json_string = dumps(json_data)
-        print(json_string)
         route = f"/api/3.0/vulnerability/acknowledge"
         ack_vul_response = api.put_route(session, route, json_data)
         if ack_vul_response.status_code != 200:
             print(f"RESPONSE: Calling [PUT] {route} got error code {ack_vul_response.status_code}")
+            if ack_vul_response.text:
+                print(f"ERROR: Info {ack_vul_response.text}")
+
     return
 
 
-def ack_vulnerabilities_by_devices(center_ip, center_port, token, filename, csv_delimiter, csv_encoding, cve_id, ack_comments):
+def ack_vulnerabilities_by_devices(center_ip, center_port, token, proxy, filename, csv_delimiter, cve_id, ack_comments):
+    if not ack_comments:
+        print(f"--ack-comments is mandatory parameter while acknowledging vulnerabilities")
+        print(f"Usage: python3 ack_vuln.py --ack-by-devices --cve-id CVE_ID --preset-name preset_name --ack-comments ack_comments")
+        return
+
     device_ids = []
     with open(filename, 'r') as csvfile:
         reader = csv.DictReader(csvfile, delimiter=csv_delimiter)
@@ -221,14 +236,13 @@ def ack_vulnerabilities_by_devices(center_ip, center_port, token, filename, csv_
         "comment": ack_comments
     }
 
-    json_string = dumps(json_data)
-    print(json_string)
-    with api.APISession(center_ip, center_port, token) as session:
+    with api.APISession(center_ip, center_port, token, proxy) as session:
         route = f"/api/3.0/vulnerability/acknowledge"
-        ack_vul_response = api.get_route(session, route, json_data)
+        ack_vul_response = api.put_route(session, route, json_data)
         if ack_vul_response.status_code != 200:
-            print(f"ERROR: Calling [POST] {route} got error code {ack_vul_response.status_code}")
-
+            print(f"ERROR: Calling [PUT] {route} got error code {ack_vul_response.status_code}")
+            if ack_vul_response.text:
+                print(f"ERROR: Info {ack_vul_response.text}")
     return
 
 
