@@ -10,7 +10,6 @@ import cvconfig
 import api
 
 
-# TODO: Throw error if cve-id is not provided
 def main():
     parser = argparse.ArgumentParser(
         prog="ack_vuln.py",
@@ -20,9 +19,9 @@ def main():
     parser.add_argument("--token", dest="token",
                         help="Use this token")
     parser.add_argument("--center-ip", dest="center_ip",
-                        help="Specified the center FQDN or IPv4 address (default:'cybervision')")
+                        help="Specify the center FQDN or IPv4 address (default:'cybervision')")
     parser.add_argument("--center-port", dest="center_port", default=cvconfig.center_port,
-                        help="Specified the center port (default: %d)" % cvconfig.center_port)
+                        help="Specify the center port (default: %d)" % cvconfig.center_port)
 
     # Main Command Parsing
     command_group = parser.add_mutually_exclusive_group()
@@ -31,19 +30,19 @@ def main():
                                help="Export all affected devices of a given preset into a CSV file, If Preset name is not passed then \"All data\" preset is considered as default\n")
     command_group.add_argument("--ack-by-preset", dest="command_ack_by_preset", default=False,
                                action="store_true",
-                               help="Update all devices in this preset for given CVE ID, If Preset name is not passed then \"All data\" preset is considered as default\n")
+                               help="Acknowledge the CVE ID for all devices in a given preset, If Preset name is not passed then \"All data\" preset is considered as default\n")
     command_group.add_argument("--ack-by-devices", dest="command_ack_by_devices", default=False,
                                action="store_true",
-                               help="Update all devices from a CSV file for given CVE ID\n")
+                               help="Acknowledge the CVE ID for all devices from a CSV file\n")
 
     parser.add_argument("--cve-id", dest="cve_id", required=True,
-                        help="Specified the UUID of CVE")
+                        help="Specified the CVE ID")
 
     parser.add_argument("--preset-name", dest="preset_name",
                         help="Preset Name, default is %s" % cvconfig.preset_name)
 
     parser.add_argument("--ack-comment",  dest="ack_comment",
-                        help="Acknowledge comments")
+                        help="Acknowledge comment")
 
     parser.add_argument("--filename", dest="filename", default="vulnerable_devices.csv",
                         help="Use this filename")
@@ -55,7 +54,7 @@ def main():
                         help="CSV file encoding, default is %s" % cvconfig.csv_encoding)
 
     parser.add_argument("--proxy", dest="proxy", default=cvconfig.proxy,
-                        help="Specified the proxy to use (default: %s)" % cvconfig.proxy)
+                        help="Specify the proxy to use (default: %s)" % cvconfig.proxy)
 
     args = parser.parse_args()
 
@@ -71,7 +70,7 @@ def main():
     ack_comment = set_conf(args.ack_comment, '')
 
     if not token or not center_ip:
-        print("TOKEN and CENTER_IP are mandatory, check cvconfig.py or us --token/--center-ip")
+        print("TOKEN and CENTER_IP are mandatory, check cvconfig.py or use --token/--center-ip")
 
     if args.command_export:
         return export_vulnerable_devices(center_ip, center_port, token, proxy, args.filename, csv_delimiter, csv_encoding, args.cve_id, args.preset_name)
@@ -105,7 +104,7 @@ def build_device_row(row, d):
 
 def write_devices(filename, csv_encoding, csv_delimiter, devices):
     with open(filename, 'w', encoding=csv_encoding) as csvfile:
-        fieldnames = ['device-id', 'device-mac', 'device-ip', 'device-name', 'device-custom-name', 'device-tags', 'device-riskscore']
+        fieldnames = ['device-id', 'device-mac', 'device-ip', 'device-name', 'device-custom-name', 'device-riskscore']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=csv_delimiter)
         writer.writeheader()
         for d in devices:
@@ -117,7 +116,7 @@ def write_devices(filename, csv_encoding, csv_delimiter, devices):
 
 def export_vulnerable_devices(center_ip, center_port, token, proxy, filename, csv_delimiter, csv_encoding, cve_id, preset_name):
     if not preset_name:
-        print(f"WARN: --preset-name not passed, By default \"All data\" preset is considered")
+        print(f"WARN: --preset-name not passed, By default %s preset is considered", cvconfig.preset_name)
         preset_name = cvconfig.preset_name
 
     with api.APISession(center_ip, center_port, token, proxy) as session:
@@ -132,7 +131,6 @@ def export_vulnerable_devices(center_ip, center_port, token, proxy, filename, cs
             print(f"ERR: CVE {cve_id} not found")
             return
         
-        # hack to get all devices via 'All data' preset, should be removed later
         presets = api.get_route(session, '/api/3.0/presets')
         preset_id = 0
         for p in presets:
@@ -151,7 +149,7 @@ def export_vulnerable_devices(center_ip, center_port, token, proxy, filename, cs
             if devices:
                 print(f"INFO: device details are being fetched....")
                 for device in devices:
-                    route = f"/api/3.0/devices/"+device
+                    route = f"/api/3.0/devices/{device}"
                     device_detail = api.get_route(session, route)
                     device_details.append(device_detail)
 
@@ -162,7 +160,7 @@ def export_vulnerable_devices(center_ip, center_port, token, proxy, filename, cs
 
 def ack_vulnerabilities_by_preset(center_ip, center_port, token, proxy, cve_id, preset_name, ack_comment):
     if not preset_name:
-        print(f"WARN: --preset-name not passed, By default \"All data\" preset is considered")
+        print(f"WARN: --preset-name not passed, By default %s preset is considered", cvconfig.preset_name)
         preset_name = 'All data'
 
     if not ack_comment:
