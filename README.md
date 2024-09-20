@@ -75,7 +75,7 @@ b. --ack-comment [mandatory]
  
 E.g., ``` python3 ack_vuln.py --ack-by-devices --cve-id=CVE-2014-0317 --ack-comment="Testing Bulk Ack from Python"```
 
-Note: Above script does not refresh preset, if you need latest data then kindly refresh preset from GUI and then run above scripts. 
+Note: Above script does not refresh preset, if you need latest data, then, kindly refresh preset from GUI or API and then run the above script. 
 ## Requirements
 
 [requirements.txt](requirements.txt)
