@@ -45,7 +45,7 @@ def main():
                         help="Acknowledge comment")
 
     parser.add_argument("--filename", dest="filename", default="vulnerable_devices.csv",
-                        help="Use this filename")
+                        help="Use this filename, if not provided default value of 'vulnerable_devices.csv' name will be used")
 
     parser.add_argument("--delimiter", dest="csv_delimiter",
                         help="CSV file delimiter, default is %s" % cvconfig.csv_delimiter)
