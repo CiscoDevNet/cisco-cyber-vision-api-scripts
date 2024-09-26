@@ -18,3 +18,6 @@ proxy = ''
 #csv_encoding = 'iso-8859-15'
 csv_encoding = 'utf-8'
 csv_delimiter = ','
+
+# ack_vuln parameters
+preset_name = 'All data'

@@ -10,7 +10,8 @@ It includes:
  - group_automation will automate things and could automatically or with several steps:
     	- export devices to a CSV file "devices.csv" and a list of Subnets "subnet.csv"
      - create groups: automatically with group name as subnet name or manually with manual edition of the subnet.csv file
-     - upload all components or devices from a csv file to update group names 
+     - upload all components or devices from a csv file to update group names
+ - ack_vuln.py: export devices to a CSV file ; Acknowledges vulnerability in bulk based on preset and cve; Acknowledges vulnerability in bulk based on CSV Data and cve
 
 All scripts are using the API v3
 
@@ -28,9 +29,9 @@ In order to add devices to the groups, please follow these steps :
 
 Groups can be added manually or using the group.py script 
 
-2.1 use group.py with export option to get the csv file
-         python3 group.py -export
-2.2 Add needed groups to the CSV file then use the import option of group.py scrypt
+2.1 use group.py with export option to get the csv file \
+```python3 group.py -export``` \
+2.2 Add needed groups to the CSV file then use the import option of group.py script
 
 ![](2021-11-16-21-01-03.png)
 
@@ -55,6 +56,26 @@ Groups can be added manually or using the group.py script
 
 ![](CCV-auto-group.png)
 
+6. Acknowledging vulnerabilities in bulk
+
+6.1 --export-affected-devices: use ack_vuln.py with export-affected-devices options to export vulnerable devices into CSV file. This operation takes two additional parameters \
+a. --cve-id [mandatory] \
+b. --export-affected-devices-preset-name  [optional] if this value is not provided, it takes "All data" as default value \
+E.g., ``` python3 ack_vuln.py --export-affected-devices --cve-id=CVE-2014-0317 ```
+
+6.2 --ack-by-preset: use ack_vuln.py with ack-by-preset options to acknowledge vulnerable devices by preset name and cve. This operation takes three additional parameters \
+a. --cve-id [mandatory] \
+b. --ack-by-preset-preset-name  [optional] if this value is not provided, it takes "All data" as default value \
+c. --ack-comment [mandatory] 
+E.g., ``` python3 ack_vuln.py --ack-by-preset --cve-id=CVE-2014-0317 --ack-comment="Testing Bulk Ack from Python"```
+
+6.3 --ack-by-devices: use ack_vuln.py with ack-by-devices options to acknowledge vulnerable devices that were exported using the --export-affected-devices option. This operation takes additional parameters \
+a. --cve-id [mandatory] \
+b. --ack-comment [mandatory] 
+ 
+E.g., ``` python3 ack_vuln.py --ack-by-devices --cve-id=CVE-2014-0317 --ack-comment="Testing Bulk Ack from Python"```
+
+Note: Above script does not refresh preset, if you need latest data, then, kindly refresh preset from GUI or API and then run the above script. 
 ## Requirements
 
 [requirements.txt](requirements.txt)
