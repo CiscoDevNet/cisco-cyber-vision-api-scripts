@@ -31,7 +31,7 @@ def main():
     parser.add_argument("--delimiter", dest="csv_delimiter",
                         help="CSV file delimiter, default is %s" % cvconfig.csv_delimiter)
     parser.add_argument("--reversedns", dest="rdns_name", action="store_true",
-                        help="Set custom name from reverse dns")
+                        help="Set custom name from reverse dns on export")
     
     parser.add_argument("--filename", dest="filename", help="Use this filename", default="devices.csv")
     # Main Command Parsing
@@ -42,9 +42,6 @@ def main():
     command_group.add_argument("--update",
                                help="Update existing groups with devices from a CSV file\n",
                                action="store_true", default=False, dest="command_update")
-    command_group.add_argument("--update_dns",
-                               help="Update custom name or property from reverse dns\n",
-                               action="store_true", default=False, dest="command_dns")
     command_group.add_argument("--unknown-vendors",
                                help="Get the list of unknown vendords\n",
                                action="store_true", default=False, dest="command_vendors")
@@ -68,8 +65,6 @@ def main():
         return device_export(center_ip, center_port, token, proxy, args.filename,csv_delimiter, csv_encoding, rdns_name)
     elif args.command_update:
         return device_update(center_ip, center_port, token, proxy, args.filename, csv_delimiter, csv_encoding)
-    elif args.command_dns:
-        return 
     elif args.command_vendors:
         return get_unkown_vendors(center_ip, center_port, token, proxy)
     
