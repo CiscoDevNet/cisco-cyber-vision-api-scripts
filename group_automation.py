@@ -341,7 +341,7 @@ def auto_from_net_org(center_ip, center_port, token, proxy, opt_keep_groups):
 
         group_data = []
         for g in leaf_groups:
-            group_data.append({'group-name':str(g), 
+            group_data.append({'group-name':str(net[g]), 
                                'group-description':str(g),
                                'group-color': '#441e91'})
 
@@ -357,8 +357,9 @@ def auto_from_net_org(center_ip, center_port, token, proxy, opt_keep_groups):
                     for n in leaf_groups:
                         if ipaddress.ip_address(ip) in ipaddress.ip_network(n):
                             device_data.append({
+                                'device-name':d['originalLabel'],
                                 'device-isdevice':str(d['isDevice']),
-                                'group-name':str(n),
+                                'group-name':str(net[n]),
                                 'device-id':d['id']
                             })
                             break
