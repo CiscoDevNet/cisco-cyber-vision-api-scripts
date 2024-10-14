@@ -51,6 +51,10 @@ def main():
     parser.add_argument("--delimiter", dest="csv_delimiter",
                         help="CSV file delimiter, default is %s" % cvconfig.csv_delimiter)
 
+    parser.add_argument("--keep-groups",
+                        help="Keep existing groups when importing\n",
+                        action="store_true", default=False, dest="opt_keep_groups")
+
     # Main Command Parsing
     command_group = parser.add_mutually_exclusive_group()
     command_group.add_argument("--export",
@@ -80,6 +84,8 @@ def main():
     csv_encoding = set_conf(args.csv_encoding, cvconfig.csv_encoding)
     csv_delimiter = set_conf(args.csv_delimiter, cvconfig.csv_delimiter)
 
+    opt_keep_groups = args.opt_keep_groups
+
     
     if not token or not center_ip:
         print("TOKEN and CENTER_IP are mandatory, check cvconfig.py or us --token/--center-ip")
@@ -93,11 +99,11 @@ def main():
         if not os.path.isfile(groups_file) :
             print("please exectue --export to get subnets.csv file then modify it as needed and push it again via this command ")
         else:
-            manu_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_encoding)
+            manu_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_encoding, opt_keep_groups)
             return
   
     elif args.command_auto:
-        auto_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_encoding)
+        auto_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_encoding, opt_keep_groups)
         return
 
     elif args.command_auto_to_net:
@@ -105,7 +111,7 @@ def main():
         return
     
     elif args.command_auto_from_net:
-        auto_from_net_org(center_ip, center_port, token, proxy)
+        auto_from_net_org(center_ip, center_port, token, proxy, opt_keep_groups)
         return
 
     parser.print_help()
@@ -179,9 +185,10 @@ def get_data_from_api(center_ip, center_port, token, proxy):
     return result
 
 
-def manu_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_encoding):
+def manu_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_encoding, opt_keep_groups):
     # Deleting all groups in the DB
-    group.group_delete_all(center_ip, center_port, token, proxy)
+    if not opt_keep_groups:
+        group.group_delete_all(center_ip, center_port, token, proxy)
 
     # Creating the groups based on CSV
     group.group_import(center_ip, center_port, token, proxy, groups_file, csv_delimiter, csv_encoding)
@@ -223,10 +230,11 @@ def manu_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_enco
 
     device.device_update(center_ip, center_port, token, proxy, new_devices_file, csv_delimiter, csv_encoding)
 
-def auto_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_encoding):
+def auto_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_encoding, opt_keep_groups):
 
     # Deleting all groups in the DB
-    group.group_delete_all(center_ip, center_port, token, proxy)
+    if not opt_keep_groups:
+        group.group_delete_all(center_ip, center_port, token, proxy)
 
     #exporting subnets from center with automated group name 
     discover_networks(p , s, center_ip, center_port, token, proxy)
@@ -311,9 +319,7 @@ def auto_to_net_org(center_ip, center_port, token, proxy):
 
     return
 
-def auto_from_net_org(center_ip, center_port, token, proxy):
-    #group.group_delete_all(center_ip, center_port, token, proxy)
-
+def auto_from_net_org(center_ip, center_port, token, proxy, opt_keep_groups):
     networks = []
     with api.APISession(center_ip, center_port, token, proxy) as session:
         networks = api.get_route(session, '/api/3.0/networks')
@@ -339,8 +345,8 @@ def auto_from_net_org(center_ip, center_port, token, proxy):
                                'group-description':str(g),
                                'group-color': '#441e91'})
 
-        
-        group.group_delete_all(center_ip, center_port, token, proxy)
+        if not opt_keep_groups:
+            group.group_delete_all(center_ip, center_port, token, proxy)
         group.group_import_lib(session, group_data)
 
         devices = device.device_export_lib(session)
