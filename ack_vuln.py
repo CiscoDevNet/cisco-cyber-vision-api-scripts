@@ -109,7 +109,7 @@ def write_devices(filename, csv_encoding, csv_delimiter, devices):
         writer.writeheader()
         for d in devices:
             row = {}
-            build_device_row(row, d)
+            build_device_row(row, d, False)
             writer.writerow(row)
         print(f"LOG: Exported {len(devices)} into '{filename}'")
 
@@ -154,7 +154,7 @@ def export_vulnerable_devices(center_ip, center_port, token, proxy, filename, cs
                     device_details.append(device_detail)
 
         # Loop to build devices
-        write_devices(filename, csv_encoding, csv_delimiter, device_details)
+        write_devices(filename, csv_encoding, csv_delimiter, device_details, False)
     return
 
 
