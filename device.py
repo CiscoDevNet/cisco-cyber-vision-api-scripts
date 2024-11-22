@@ -219,7 +219,7 @@ def write_devices_group(filename,csv_encoding,csv_delimiter,devices,session):
         writer.writeheader()
         for d in devices:
             row = {}
-            build_device_row(session,row,d)
+            build_device_row(session,row,d, False)
             writer.writerow(row)
         print(f"LOG: Exported {len(devices)} into '{filename}'")
 
