@@ -195,18 +195,21 @@ def manu_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_enco
 
     # Updating a CSV adding Group using the subnet
     updated = 0
-    with open(devices_file, 'r') as csvfile:
-        devices = {}
-        reader_dev = csv.DictReader(csvfile, delimiter=cvconfig.csv_delimiter)
-        for dev in reader_dev:
-            devices[dev['device-id']] = dev
-            ips = json.loads(dev['device-ip'].replace("'",'"'))
+    with api.APISession(center_ip, center_port, token, proxy) as session:
+        devices = device.device_export_lib(session)
+        new_devices = []
+        for dev in devices:
+            ips = dev['ip']
             with open(groups_file, 'r') as csvfile:
                 reader_group = csv.DictReader(csvfile, delimiter=cvconfig.csv_delimiter)
                 for grp in reader_group:
                     for ip in ips:
                         if ipaddress.ip_address(ip) in ipaddress.ip_network(grp['Subnet']):
-                            devices[dev['device-id']]['group-name'] = grp["group-name"]
+                            row = {}
+                            device.build_device_row(None, row, dev, False)
+                            row['group-name'] = grp["group-name"]
+                            row['device-isdevice'] = str(row["device-isdevice"])
+                            new_devices.append(row)
                             updated = updated + 1 
                             break
                     else:
@@ -215,20 +218,8 @@ def manu_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_enco
 
     print("LOG: Updated %d devices with group information based on subnet"%updated)
 
-    new_devices_file = os.path.splitext(devices_file)[0]+"-withgrp.csv"
-    with open(new_devices_file, 'w', encoding=cvconfig.csv_encoding) as csvfile:
-            fieldnames = ['device-id','device-mac','device-ip','device-name','device-custom-name','device-tags','device-riskscore',
-                        'group-name','group-color','group-industrial-impact',
-                        'device-network','device-fw-version','device-hw-version','device-model-name','device-model-ref',                       
-                        'device-riskscore-current','device-riskscore-best-achievable','device-isdevice',
-                        ]
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=cvconfig.csv_delimiter)
-            writer.writeheader()
-            for id,d in devices.items():
-                writer.writerow(d)
-            print(f"LOG: Exported {len(devices)} into '{new_devices_file}'")
-
-    device.device_update(center_ip, center_port, token, proxy, new_devices_file, csv_delimiter, csv_encoding)
+    with api.APISession(center_ip, center_port, token, proxy) as session:
+        device.device_update_lib(session, new_devices)
 
 def auto_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_encoding, opt_keep_groups):
 
