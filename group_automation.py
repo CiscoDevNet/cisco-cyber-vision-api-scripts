@@ -193,30 +193,34 @@ def manu_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_enco
     # Creating the groups based on CSV
     group.group_import(center_ip, center_port, token, proxy, groups_file, csv_delimiter, csv_encoding)
 
-    # Updating a CSV adding Group using the subnet
+
     updated = 0
+    already_ok = 0
+    with open(groups_file, 'r') as csvfile:
+            reader_group = [ l for l in csv.DictReader(csvfile, delimiter=cvconfig.csv_delimiter)]
     with api.APISession(center_ip, center_port, token, proxy) as session:
         devices = device.device_export_lib(session)
         new_devices = []
         for dev in devices:
             ips = dev['ip']
-            with open(groups_file, 'r') as csvfile:
-                reader_group = csv.DictReader(csvfile, delimiter=cvconfig.csv_delimiter)
-                for grp in reader_group:
-                    for ip in ips:
-                        if ipaddress.ip_address(ip) in ipaddress.ip_network(grp['Subnet']):
-                            row = {}
-                            device.build_device_row(None, row, dev, False)
+            for grp in reader_group:
+                for ip in ips:
+                    if ipaddress.ip_address(ip) in ipaddress.ip_network(grp['Subnet']): 
+                        row = {}
+                        device.build_device_row(None, row, dev, False)
+                        if row['group-name'] != grp["group-name"]:
                             row['group-name'] = grp["group-name"]
                             row['device-isdevice'] = str(row["device-isdevice"])
                             new_devices.append(row)
                             updated = updated + 1 
-                            break
-                    else:
-                        continue
-                    break
+                        else:
+                            already_ok = already_ok + 1
+                        break
+                else:
+                    continue
+                break
 
-    print("LOG: Updated %d devices with group information based on subnet"%updated)
+    print("LOG: {} devices to update, {} devices with already set groups".format(updated, already_ok))
 
     with api.APISession(center_ip, center_port, token, proxy) as session:
         device.device_update_lib(session, new_devices)
