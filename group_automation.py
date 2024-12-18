@@ -208,7 +208,7 @@ def manu_groupping(center_ip, center_port, token, proxy, csv_delimiter, csv_enco
                     if ipaddress.ip_address(ip) in ipaddress.ip_network(grp['Subnet']): 
                         row = {}
                         device.build_device_row(None, row, dev, False)
-                        if row['group-name'] != grp["group-name"]:
+                        if not 'group-name' in row or row['group-name'] != grp["group-name"]:
                             row['group-name'] = grp["group-name"]
                             row['device-isdevice'] = str(row["device-isdevice"])
                             new_devices.append(row)
