@@ -50,8 +50,8 @@ Groups can be added manually or using the group.py script
 
 5. Auto-groupping options:
 
-5.1 --export : Export subnets and devices into CSV files
-5.2 --import : Push to CyberVision Center custom groups and associate devices / xomponents to subnets based on "subnet.csv" (result of the export option which could be edited by the user.)
+5.1 --export : Export subnets and devices into CSV files  
+5.2 --import : Push to CyberVision Center custom groups and associate devices / xomponents to subnets based on "subnet.csv" (result of the export option which could be edited by the user.)  
 5.3 --auto : Export subnets and devices into CSV files and push to center new group names, based on subnet names
 
 ![](CCV-auto-group.png)
