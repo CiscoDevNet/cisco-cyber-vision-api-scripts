@@ -71,7 +71,7 @@ Note: Above script does not refresh preset, if you need latest data, then, kindl
 
 [requirements.txt](requirements.txt)
 
-7. important_events_notifier is available in the folder (important_events_notifier)[https://github.com/CiscoDevNet/cisco-cyber-vision-api-scripts/edit/master/important_events_notifier/]
+7. important_events_notifier is available in the folder [important_events_notifier](https://github.com/CiscoDevNet/cisco-cyber-vision-api-scripts/edit/master/important_events_notifier/)  
 
 ## License
 
