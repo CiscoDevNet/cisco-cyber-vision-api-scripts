@@ -88,4 +88,6 @@ This project is licensed under the Cisco Sample Code License 1.1 - see the [LICE
 
 * [Cisco DevNet Website](https://developer.cisco.com)
 
+[![published](https://static.production.devnetcloud.com/codeexchange/assets/images/devnet-published.svg)](https://developer.cisco.com/codeexchange/github/repo/CiscoDevNet/cisco-cyber-vision-api-scripts)
+
 
