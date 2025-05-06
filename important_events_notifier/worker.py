@@ -15,7 +15,7 @@ from configparser import ConfigParser
 from sys import exit
 
 from api import cybervision
-from renderer import text, short_text
+from renderer import text
 from notifier import email_notifier
 
 class Config():
